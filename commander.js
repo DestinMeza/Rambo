@@ -1,9 +1,5 @@
-const Condition = require("./condition");
-const Action = require("./action");
-const Goal = require("./goal");
 const Planner = require("./planner");
 const Plan = require("./plan");
-const Task = require("./task");
 
 const ActionManager = require("./actionManager");
 
@@ -100,7 +96,13 @@ class Commander
                 actionIndex: 0
             });
 
-            console.log("Plan found,", this.currentPlan.name)
+            console.log("Plan found,", this.currentPlan.name);
+
+            Memory[this.name] = 
+            {
+                name: this.name,
+                plan: this.getPlanSerializable()
+            }
         }
         else {
             let processState = this.currentPlan.process();
@@ -110,11 +112,9 @@ class Commander
                 case PROCESS.RUNNING:
                     break;
                 case PROCESS.FAILURE:
-                    console.log("Current Plan has failed!");
                     this.currentPlan = null;
                     break;
                 case PROCESS.SUCCESS:
-                    console.log("Plan has Completed!");
                     this.currentPlan = null;
                     break;
             }
