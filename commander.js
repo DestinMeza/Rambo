@@ -2,6 +2,7 @@ const Planner = require("./planner");
 const Plan = require("./plan");
 
 const ActionManager = require("./actionManager");
+const GoalManager = require("./goalManager");
 
 const PROCESS = Object.freeze({
     RUNNING: 0,
@@ -14,9 +15,11 @@ class Commander
     constructor(info)
     {
         this.name = info.name;
+        this.worldState = info.worldState;
         this.currentPlan = null;
         this.isCreatedFrame = true;
-        this.actionManager = new ActionManager(info.name);
+        this.actionManager = new ActionManager(info.name, info.worldState);
+        this.goalManager = new GoalManager(info.name, info.worldState);
     }
 
     setup()
@@ -52,18 +55,10 @@ class Commander
     process()
     {
         this.actionManager.process();
+        this.goalManager.process();
 
-        this.goals = [
-            this.actionManager.goalMap["Idle"],
-            this.actionManager.goalMap["Spawn Creep"],
-            this.actionManager.goalMap["Collect Resource"]
-        ]
-
-        this.actions = [
-            this.actionManager.actionMap["Idle"],
-            this.actionManager.actionMap["Spawn Creep"],
-            this.actionManager.actionMap["Assign Creep Task"]
-        ]
+        this.actions = this.actionManager.actionMap;
+        this.goals = this.goalManager.goalMap;
 
         if(this.isCreatedFrame)
         {

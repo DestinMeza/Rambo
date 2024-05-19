@@ -1,17 +1,23 @@
 const Commander = require("./commander");
 const CreepRunner = require("./creepRunner");
+const WorldState = require("./worldState");
 
+let worldState = null;
 let commander = null;
 
 module.exports.loop = function () {
     deleteNullCreeps();
 
-    if(commander == null) {
+    if(commander == null || worldState == null) {
+        worldState = new WorldState();
+
         commander = new Commander({
-            name: "Test Commander"
+            name: "Test Commander",
+            worldState: worldState
         });
     }
     else {
+        worldState.process();
         commander.process();
     }
 

@@ -17,7 +17,7 @@ class Plan
     {
         let currentAction = this.actions[this.actionIndex];
         
-        let processState = currentAction.process();
+        let processState = currentAction.process(currentAction);
 
         if(processState == PROCESS.SUCCESS)
         {
