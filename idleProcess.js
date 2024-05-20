@@ -1,11 +1,12 @@
-function process(objectInfo)
-{
-    if(objectInfo.startTime == undefined)
-    {
-        objectInfo.startTime = Game.time;
-    }
+const PROCESS = Object.freeze({
+    RUNNING: 0,
+    FAILURE: 1,
+    SUCCESS: 2
+});
 
-    if(Game.time - objectInfo.startTime < objectInfo.duration)
+function process(self)
+{
+    if(Game.time - self.data.startTime < self.data.duration)
     {
         return PROCESS.RUNNING;
     }

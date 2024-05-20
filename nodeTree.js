@@ -1,3 +1,5 @@
+const Node = require("./node")
+
 class NodeTree
 {
     /**
@@ -6,13 +8,13 @@ class NodeTree
      */
     constructor(info)
     {
-        this.rootNode = info.node;
+        this.rootNode = info.rootNode;
     }
 
     getActions()
     {
-        let nodeStack = this.getChildrenNodes(this.rootNode, []);
-        let nodeChainStartToEndPlan = nodeStack.toReversed();
+        let nodeStack = this.getChildrenNodes(this.rootNode, [this.rootNode]);
+        let nodeChainStartToEndPlan = nodeStack.reverse();
 
         let actions = [];
         nodeChainStartToEndPlan.forEach(node => {

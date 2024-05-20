@@ -4,11 +4,11 @@ const Plan = require("./plan");
 const ActionManager = require("./actionManager");
 const GoalManager = require("./goalManager");
 
-const PROCESS = Object.freeze({
+const PROCESS = {
     RUNNING: 0,
     FAILURE: 1,
     SUCCESS: 2
-});
+};
 
 class Commander
 {
@@ -18,8 +18,14 @@ class Commander
         this.worldState = info.worldState;
         this.currentPlan = null;
         this.isCreatedFrame = true;
-        this.actionManager = new ActionManager(info.name, info.worldState);
-        this.goalManager = new GoalManager(info.name, info.worldState);
+        this.actionManager = new ActionManager({
+            commanderName: this.name,
+            worldState: this.worldState
+        });
+        this.goalManager = new GoalManager({
+            commanderName: this.name,
+            worldState: this.worldState
+        });
     }
 
     setup()
@@ -57,8 +63,8 @@ class Commander
         this.actionManager.process();
         this.goalManager.process();
 
-        this.actions = this.actionManager.actionMap;
-        this.goals = this.goalManager.goalMap;
+        this.actions = this.actionManager.getActions();
+        this.goals = this.goalManager.getGoals();
 
         if(this.isCreatedFrame)
         {
@@ -72,6 +78,11 @@ class Commander
             if(loadedPlan != undefined)
             {
                 this.currentPlan = loadedPlan;
+                
+                if(loadedPlan.actions.length == 0)
+                {
+                    this.currentPlan = null;
+                }
             }
         }
 
@@ -87,7 +98,7 @@ class Commander
 
             this.currentPlan = new Plan({
                 name: planInfo.goal.name,
-                actions: planInfo.plan,
+                actions: planInfo.actions,
                 actionIndex: 0
             });
 
@@ -137,7 +148,9 @@ class Commander
         {
             var serializedAction = 
             {
-                name: this.currentPlan.actions[action].name
+                name: this.currentPlan.actions[action].name,
+                hasStarted: this.currentPlan.actions[action].hasStarted,
+                data: this.currentPlan.actions[action].data
             }
 
             actions.push(serializedAction);

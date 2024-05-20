@@ -16,7 +16,13 @@ class Plan
     process()
     {
         let currentAction = this.actions[this.actionIndex];
-        
+
+        if(!currentAction.hasStarted)
+        {
+            currentAction.start(currentAction);
+            currentAction.hasStarted = true;
+        }
+
         let processState = currentAction.process(currentAction);
 
         if(processState == PROCESS.SUCCESS)

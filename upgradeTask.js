@@ -1,21 +1,25 @@
-const HARVESTER_STATE =
+const UPGRADER_STATE =
 {
     IDLE: 0,
-    HARVESTING: 1,
-    DEPOSITING: 2
+    COLLECTING_STORE: 1,
+    HARVESTING: 2,
+    UPGRADING: 3
 }
 
 function process(info) {
     switch(info.state)
     {
-        case HARVESTER_STATE.IDLE:
+        case UPGRADER_STATE.IDLE:
             info = idle(info);
             break;
-        case HARVESTER_STATE.HARVESTING:
+        case UPGRADER_STATE.COLLECTING_STORE:
+            info = collecting_store(info);
+            break;
+        case UPGRADER_STATE.HARVESTING:
             info = harvest(info);
             break;
-        case HARVESTER_STATE.DEPOSITING:
-            info = deposit(info);
+        case UPGRADER_STATE.UPGRADING:
+            info = upgrade(info);
             break;
     }
 
@@ -23,15 +27,62 @@ function process(info) {
 }
 
 function idle(info) {
-    const source = Game.getObjectById(info.targetSource);
 
-    if(source == null)
+    const targetStorage = Game.getObjectById(info.targetStorage);
+
+    if(targetStorage == null)
+    {
+        info.targetStorage = findStorage(info);
+
+        if(info.targetStorage != null)
+        {
+            info.state = UPGRADER_STATE.COLLECTING_STORE;
+            return info;
+        }
+
+        //Find Source to get energy from.
+        const source = Game.getObjectById(info.targetSource);
+
+        if(source == null)
+        {
+            info.targetSource = findSource(info);
+            
+            if(info.targetSource != null)
+            {
+                info.state = UPGRADER_STATE.HARVESTING;
+                return info;
+            }
+        }
+    }
+
+    return info;
+}
+
+function collecting_store(info) {
+    const targetStorage = Game.getObjectById(info.targetStorage);
+
+    if(targetStorage == undefined)
     {
         info.targetSource = findSource(info);
+        info.state = UPGRADER_STATE.HARVESTING;
         return info;
     }
 
-    info.state = HARVESTER_STATE.HARVESTING;
+    let result = creep.withdraw(targetStorage, [RESOURCE_ENERGY]);
+
+    if(result == ERR_NOT_IN_RANGE) {
+        creep.moveTo(roomController);
+    }
+    else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0)
+    {
+        info.state = UPGRADER_STATE.UPGRADING;
+        info.targetStorage = null;
+    }
+    else
+    {
+        info.state = UPGRADER_STATE.IDLE;
+        info.targetStorage = null;
+    }
 
     return info;
 }
@@ -42,45 +93,36 @@ function harvest(info) {
 
     if(source == null)
     {
-        info.state = HARVESTER_STATE.IDLE;   
+        info.state = UPGRADER_STATE.IDLE;   
         return info;
     }
 
-    let error = creep.harvest(source);
+    let result = creep.harvest(source);
 
-    if(error == ERR_NOT_IN_RANGE) {
+    if(result == ERR_NOT_IN_RANGE) {
         creep.moveTo(source);
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
-        info.state = HARVESTER_STATE.DEPOSITING;
+        info.state = UPGRADER_STATE.UPGRADING;
         info.targetSource = null;
-        info.targetStorage = findStorage(info);
     }
 
     return info;
 }
 
-function deposit(info)
+function upgrade(info)
 {
     const creep = Game.creeps[info.creep];
-    let storage = Game.getObjectById(info.targetStorage);
+    const roomController = Game.getObjectById(info.roomController);
 
-    if(storage == null)
-    {
-        info.targetStorage = findStorage(info);
-        return info;
+    let result = creep.upgradeController(roomController);
+
+    if(result == ERR_NOT_IN_RANGE) {
+        creep.moveTo(roomController);
     }
-
-    let error = creep.transfer(storage, RESOURCE_ENERGY);
-
-    if(error == ERR_NOT_IN_RANGE) {
-        creep.moveTo(storage);
-    }
-    else if(creep.store.getUsedCapacity([RESOURCE_ENERGY]) == 0)
+    else if(creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0)
     {
-        info.targetStorage = null;
-        info.targetSource = findSource(info);
-        info.state = info.targetSource == null ? HARVESTER_STATE.IDLE : HARVESTER_STATE.HARVESTING
+        info.state = UPGRADER_STATE.IDLE;
     }
 
     return info;
@@ -142,7 +184,9 @@ function findStorage(info)
     })
 
     storedableStructures = storedableStructures.filter(structure => {
-        return structure.store.getFreeCapacity([RESOURCE_ENERGY]) > 0
+        return structure.store.getFreeCapacity([RESOURCE_ENERGY]) > 0 
+        && !(structure instanceof StructureSpawn)
+        && !(structure instanceof StructureExtension)
     })
 
     if(storedableStructures.length <= 0)
@@ -154,7 +198,6 @@ function findStorage(info)
     {
         return y.pos - x.pos;
     })
-
 
     return storedableStructures[0].id;
 }

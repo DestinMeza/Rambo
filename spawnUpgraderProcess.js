@@ -1,20 +1,21 @@
 const Task = require("./task");
 
-const PROCESS = Object.freeze({
+const PROCESS = {
     RUNNING: 0,
     FAILURE: 1,
     SUCCESS: 2
-});
+};
 
-const HARVESTER_STATE =
+const UPGRADER_STATE =
 {
     IDLE: 0,
-    HARVESTING: 1,
-    DEPOSITING: 2
+    COLLECTING_STORE: 1,
+    HARVESTING: 2,
+    UPGRADING: 3
 }
 
 function process (self) {
-    const creepName = "Harvester " +  self.data.randomNumber;
+    const creepName = "Upgrader " +  self.data.randomNumber;
     const spawn = Game.getObjectById(self.data.spawnId);
 
     let code = spawn.spawnCreep([WORK, MOVE, CARRY], creepName);
@@ -23,11 +24,12 @@ function process (self) {
     {
         case OK: 
             Game.creeps[creepName].memory.task = new Task({
-                name: "Harvest and Return",
+                name: "Upgrade",
                 creep: creepName,
                 data:
                 {
-                    state: HARVESTER_STATE.IDLE
+                    state: UPGRADER_STATE.IDLE,
+                    roomController: spawn.room.controller.id
                 }
             })
 

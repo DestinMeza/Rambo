@@ -35,7 +35,7 @@ class Planner {
 
         //Create new World State to simulate
         let worldSim = new WorldState();
-        
+
         //Find best last action
         let lastNode = this.findLastNode(bestGoal, actions);
 
@@ -47,17 +47,25 @@ class Planner {
             0
         );
 
-        let nodeTree = new NodeTree(rootNodeWithChildren);
-
-        let plan = nodeTree.getActions();
-
-        //Find target plan recursively
-        if(plan == undefined) {
+        if(rootNodeWithChildren == undefined)
+        {
             console.log("No plan could be found.");
             return;
         }
 
-        return { plan: plan, goal: bestGoal};
+        let nodeTree = new NodeTree({
+            rootNode: rootNodeWithChildren
+        });
+
+        let plannedActions = nodeTree.getActions();
+
+        //Find target plan recursively
+        if(plannedActions == undefined || plannedActions.length == 0) {
+            console.log("No plan could be found.");
+            return;
+        }
+
+        return { actions: plannedActions, goal: bestGoal};
     }
 
     /**
@@ -71,9 +79,9 @@ class Planner {
         actions.forEach(action => {
             let postConditionMatches = [];
 
-            for(let conditionKey in bestGoal.conditions)
+            for(let conditionKey in bestGoal.postConditions)
             {
-                let condition = bestGoal.conditions[conditionKey];
+                let condition = bestGoal.postConditions[conditionKey];
                 
                 if(action.postConditions.includes(condition))
                 {
@@ -162,7 +170,7 @@ class Planner {
      */
     isGoalSatisfied(bestGoal, node)
     {        
-        bestGoal.conditions.forEach(condition => {
+        bestGoal.postConditions.forEach(condition => {
             if(!this.isConditionSatisfied(condition, node))
             {
                 return false
@@ -180,7 +188,7 @@ class Planner {
      */
     isConditionSatisfied(condition, node)
     {
-        if(node.postConditions.includes(condition))
+        if(node.action.postConditions.includes(condition))
         {
             return true;   
         }

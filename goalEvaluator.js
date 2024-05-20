@@ -3,9 +3,9 @@ class GoalEvaluator
     static evaluate(goals)
     {
         goals = goals.filter(goal => {
-            for(let i = 0; i < goal.conditions.length; i += 1) {
+            for(let i = 0; i < goal.preConditions.length; i += 1) {
                 
-                let condition = goal.conditions[i];
+                let condition = goal.preConditions[i];
 
                 if(!condition.evaluate())
                 {
