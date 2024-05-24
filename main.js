@@ -1,11 +1,22 @@
 const Commander = require("./commander");
 const CreepRunner = require("./creepRunner");
 const WorldState = require("./worldState");
+const BaseManager = require("./baseManager");
 
 let worldState = null;
 let commander = null;
+let baseManager = null;
 
 module.exports.loop = function () {
+    if(baseManager == null)
+    {
+        baseManager = new BaseManager();
+    }
+
+    baseManager.showVisual();
+
+    return;
+
     deleteNullCreeps();
 
     if(commander == null || worldState == null) {
