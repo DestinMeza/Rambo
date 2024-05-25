@@ -14,7 +14,7 @@ class Grid
 
             for(let y = 0; y < size; y += 1)
             {
-                this.grid[x][y] = 0;
+                this.grid[x][y] = -1;
             }
         }
     }
@@ -27,6 +27,22 @@ class Grid
     get(x, y)
     {
         return this.grid[x][y];
+    }
+
+    isComplete()
+    {        
+        for(let x = 0; x < this.size; x += 1)
+        {
+            for(let y = 0; y < this.size; y += 1)
+            {
+                if(this.get(x, y) == -1)
+                {
+                    return false;   
+                }
+            }
+        }
+
+        return true;
     }
 
     save()
@@ -77,11 +93,35 @@ class Grid
 
                 visual.rect(x - 0.5, y - 0.5, 1, 1, {
                     fill: color,
-                    opacity: this.lerp(0, 1, (value / this.size))
+                    opacity: this.lerp(0, 7, (value / this.size))
                 });
-                visual.text(value, x, y + 0.3);
+
+                visual.text(value, x, y);
             }
         }
+    }
+
+    getPositionsOverThreshold(threshold)
+    {
+        let positions = [];
+        
+        for(let x = 0; x < this.size; x += 1)
+        {
+            for(let y = 0; y < this.size; y += 1)
+            {
+                let value = this.get(x, y);
+
+                if(value >= threshold)
+                {
+                    positions.push({
+                        pos: {x: x, y: y},
+                        value: {value}
+                    });
+                }
+            }
+        }
+
+        return positions;
     }
 
     lerp(a, b, t)

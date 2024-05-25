@@ -13,7 +13,7 @@ module.exports.loop = function () {
         baseManager = new BaseManager();
     }
 
-    baseManager.showVisual();
+    baseManager.showVisual("sim");
 
     return;
 

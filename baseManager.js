@@ -1,13 +1,24 @@
 const RoomEvaluator = require("./roomEvaluator");
+const FortressBlueprint = require("./fortress");
 
 class BaseManager {
     constructor() {
-
+        this.blueprints = [FortressBlueprint];
     }
 
-    showVisual()
+    showVisual(roomName)
     {
-        RoomEvaluator.evaluateRoom("sim");
+        RoomEvaluator.test_EvaluateRoom(roomName);
+    }
+
+    evaluateRoom(roomName)
+    {
+        RoomEvaluator.evaluateRoom(roomName);
+    }
+
+    createBase(roomName)
+    {
+        
     }
 }
 

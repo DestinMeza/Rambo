@@ -9,8 +9,16 @@ module.exports = {
 
         let roomGrid = info != undefined ? this.loadRoomInfo(info) : this.generateRoomInfo(roomName);
 
-        roomGrid.visualize(Game.rooms[roomName].visual);
+        return roomGrid;
     },
+
+    test_EvaluateRoom: function(roomName) {
+        let grid = this.evaluateRoom(roomName);
+        grid.visualize(Game.rooms[roomName].visual);
+
+        return grid;
+    },
+    
     loadRoomInfo: function(save)
     {
         let loadedGrid = new Grid(gridSize);
@@ -31,37 +39,46 @@ module.exports = {
         for(let y = 0; y < gridSize; y++) {
             for(let x = 0; x < gridSize; x++) {
                 const tile = terrain.get(x, y);
-                const weight =
-                    tile === TERRAIN_MASK_WALL || tile === TERRAIN_MASK_SWAMP 
-                    ? 1  // unbuildable => weight: 1
-                    : 0 ; // plain => weight: 0
-                grid.set(x, y, weight);
+                const unbuildable = tile === TERRAIN_MASK_WALL || tile === TERRAIN_MASK_SWAMP;
+                const value = unbuildable
+                    ? 0  // unbuildable => weight: 1
+                    : -1 ; // plain => weight: -1
+                grid.set(x, y, value);
             }
         }
 
-        let finalGrid = new Grid(gridSize);
-        
-        for(let y = 0; y < gridSize; y++) {
-            for(let x = 0; x < gridSize; x++) {
-                let value = grid.get(x, y);
+        let index = 0;
 
-                if(value == 1) {
-                    continue;
+        while(!grid.isComplete())
+        {
+            for(let y = 0; y < gridSize; y++) {
+                for(let x = 0; x < gridSize; x++) {
+                    if(grid.get(x, y) != -1)
+                    {
+                        continue;
+                    }
+
+                    let dist = this.findNearestWallDist(grid, {x, y}, index)
+                    grid.set(x, y, dist);
                 }
-
-                let dist = this.findNearestWallDist(grid, {x, y})
-                finalGrid.set(x, y, dist);
+            }
+            
+            index++;
+            if(index > 25)
+            {
+                console.log("Exceeded max search");
+                break;
             }
         }
 
         Memory.rooms[roomName] = {
-            grid: finalGrid.save()
+            grid: grid.save()
         }
 
-        return finalGrid;
+        return grid;
     },
 
-    findNearestWallDist: function(refGrid, currentPos) {
+    findNearestWallDist: function(refGrid, currentPos, targetNeighbor) {
         const directions = [
             {x:-1, y:-1},  //UP-LEFT
             {x: 0, y:-1},  //UP
@@ -73,33 +90,35 @@ module.exports = {
             {x: -1, y: 0}, //LEFT
         ];
 
-        let lowestValue = 50;
+        let updateValue = 50;
 
+        //Iterate through all nearby cells. Check if wall near.
         for(const directionKey in directions)
         {
-            for(let s = 1; s < gridSize; s++)
+            const direction = directions[directionKey];
+
+            const x = direction.x + currentPos.x;
+            const y = direction.y + currentPos.y;
+
+            if(x <= -1 || x >= 50 || y <= -1 || x >= 50)
             {
-                const direction = directions[directionKey];
+                continue;
+            }
 
-                const x = direction.x * s + currentPos.x;
-                const y = direction.y * s + currentPos.y;
+            let foundValue = refGrid.get(x, y);
 
-                if(x <= -1 || x >= 50 || y <= -1 || x >= 50)
-                {
-                    if(lowestValue > s)
-                    {
-                        lowestValue = s;
-                    }
-                    continue;
-                }
-
-                if(refGrid.get(x, y) == 1 && lowestValue > s)
-                {
-                    lowestValue = s;
-                }
+            if(foundValue == targetNeighbor && updateValue > foundValue)
+            {
+                updateValue = targetNeighbor + 1;
+                break;
             }
         }
 
-        return lowestValue;
+        if(updateValue == 50)
+        {
+            updateValue = -1;
+        }
+
+        return updateValue;
     }
 }
