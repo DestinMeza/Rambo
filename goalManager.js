@@ -14,12 +14,6 @@ class GoalManager
         
         this.goalMap = 
         {
-            Idle: new Goal({
-                name: "Idle",
-                priority: 0.01,
-                preconditions: [],
-                postconditions: []
-            }),
             Collect_Energy: new Goal({
                 name: "Collect_Energy",
                 priority: 1.0,
@@ -31,6 +25,12 @@ class GoalManager
                 priority: 1.0,
                 preconditions: [],
                 postconditions: []
+            }),
+            Build_Additional_Structures: new Goal({
+                name: "Build_Additional_Structures",
+                priority: 1.0,
+                preconditions: [],
+                preconditions: [],
             })
         }
     }

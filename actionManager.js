@@ -1,9 +1,10 @@
 const Action = require("./action");
 
 //Action Processes
-const idleProcess = require("./idleProcess");
 const spawnHarvesterProcess = require("./spawnHarvesterProcess");
 const spawnUpgraderProcess = require("./spawnUpgraderProcess");
+const spawnLocalBuilderProcess = require("./spawnBuilderProcess");
+const placeLocalConstructionSiteProcess = require("./placeLocalConstructionSitesProcess");
 
 const PROCESS = Object.freeze({
     RUNNING: 0,
@@ -19,14 +20,6 @@ class ActionManager
         this.worldState = info.worldState;
 
         this.actionMap = {
-            Idle: new Action({
-                name: "Idle",
-                effects: [],
-                process: (self) => idleProcess(self),
-                start: (self) => {
-                    self.data.startTime = Game.time;
-                }
-            }),
             Spawn_Harvester: new Action({
                 name: "Spawn_Harvester",
                 effects: [(worldSim) => {
@@ -44,7 +37,24 @@ class ActionManager
                 }],
                 process: (self) => spawnUpgraderProcess(self),
                 start: (self) => {}
-            })
+            }),
+            Spawn_Builder: new Action({
+                name: "Spawn_Builder",
+                effects: [(worldSim) => {
+                    worldSim.builders = worldSim.builders + 1;
+                    worldSim.creepsAlive = worldSim.creepsAlive + 1;
+                }],
+                process: (self) => spawnLocalBuilderProcess(self),
+                start: (self) => {}
+            }),
+            Place_Construction_Sites: new Action({
+                name: "Place_Construction_Sites",
+                effects: [(worldSim) => {
+                    worldSim.constructionSiteCount = worldSim.constructionSiteCount + 1;
+                }],
+                process: (self) => placeLocalConstructionSiteProcess(self),
+                start: (self) => {}
+            }),
         };
     }
 
@@ -71,9 +81,6 @@ class ActionManager
 
     setActionProcessData()
     {
-        this.actionMap.Idle.data = {
-            duration: 10
-        }
         this.actionMap.Spawn_Harvester.data = {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
@@ -81,6 +88,13 @@ class ActionManager
         this.actionMap.Spawn_Upgrader.data = {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
+        }
+        this.actionMap.Spawn_Builder.data = {
+            randomNumber: this.worldState.randomNumber,
+            spawnId: this.worldState.spawn.id
+        }
+        this.actionMap.Place_Construction_Sites.data = {
+            roomName: this.worldState.room.name
         }
     }
     

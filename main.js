@@ -8,14 +8,6 @@ let commander = null;
 let baseManager = null;
 
 module.exports.loop = function () {
-    if(baseManager == null)
-    {
-        baseManager = new BaseManager();
-    }
-
-    baseManager.showVisual("sim");
-
-    return;
 
     deleteNullCreeps();
 

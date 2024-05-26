@@ -1,5 +1,7 @@
 module.exports = {
   name: "Fortress",
+  remoteOrigin: {x:25, y:23}, //Remote base.
+  mainOrigin: {x:24, y:25}, //Main base.
   buildings: {
     spawn: {
       type: STRUCTURE_SPAWN,

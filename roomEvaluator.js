@@ -4,9 +4,10 @@ const gridSize = 50;
 module.exports = {
     
     evaluateRoom: function(roomName) {
-        //Check if has info in save
+
         let info = Memory.rooms[roomName];
 
+        //Check if has info in save
         let roomGrid = info != undefined ? this.loadRoomInfo(info) : this.generateRoomInfo(roomName);
 
         return roomGrid;
@@ -15,12 +16,14 @@ module.exports = {
     test_EvaluateRoom: function(roomName) {
         let grid = this.evaluateRoom(roomName);
         grid.visualize(Game.rooms[roomName].visual);
-
-        return grid;
     },
     
     loadRoomInfo: function(save)
     {
+        if(save.ignore) {
+            return null;
+        }
+
         let loadedGrid = new Grid(gridSize);
         loadedGrid.load(save);
 
@@ -69,10 +72,6 @@ module.exports = {
                 console.log("Exceeded max search");
                 break;
             }
-        }
-
-        Memory.rooms[roomName] = {
-            grid: grid.save()
         }
 
         return grid;

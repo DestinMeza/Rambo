@@ -18,35 +18,57 @@ class Node
 
     /**
      * @param {WorldState} worldSim
-     * @param {Action} observerAction
+     * @param {Action} potentialChildAction
      */
-    evaluateNode(worldSim, observerAction){
-        let simAction = Object.assign({}, this.action);
-        worldSim.simulateStateChange(simAction.effects);
+    evaluateNode(worldSim, potentialChildAction){
+        worldSim.simulateStateChange(this.action.effects);
 
-        let simPostConditions = worldSim.actionPostConditionMap[simAction.name];
-        let simPreConditions = worldSim.actionPreConditionMap[observerAction.name];
+        let simPostConditions = worldSim.actionPostConditionMap[potentialChildAction.name];
+        let simPreConditions = worldSim.actionPreConditionMap[this.action.name];
 
-        //Check if conditions are included.
-        simPreConditions.forEach(condition => {
-            if(!simPostConditions.includes(condition))
+        let notMetConditions = [];
+
+        //Find potential all non met conditions in with child.
+        for(let i = 0; i < simPostConditions.length; i++)
+        {
+            const condition = simPostConditions[i];
+
+            if(!simPreConditions.includes(condition))
             {
-                worldSim.process(); //Reset State
-                return false;
+                notMetConditions.push(condition);
             }
-        });
+        }
 
-        //Check if conditions are evaluated as True
-        simPreConditions.forEach(condition => {
-            if(!condition)
-            {
-                worldSim.process(); //Reset State
-                return false;
-            }
-        });
+        if(notMetConditions.length > 0)
+        {
+            return false;
+        }
 
+        //Check if non met conditions are satisfied
+        // for(let i = 0; i < notMetConditions.length; i++)
+        // {
+        //     const condition = notMetConditions[i];
+
+        //     if(condition.evaluate() == false)
+        //     {
+        //         return false;
+        //     }
+        // }
+        
         worldSim.process(); //Reset State
         return true;
+    }
+
+    print()
+    {
+        let children = [this.action.name];
+
+        for(let i = 0; i < this.children.length; i++)
+        {
+            children.push(this.children[i].print());
+        }
+
+        return children;
     }
 
     /**

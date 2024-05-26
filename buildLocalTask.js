@@ -1,25 +1,25 @@
-const UPGRADER_STATE =
+const BUILDER_STATE =
 {
     IDLE: 0,
     COLLECTING_STORE: 1,
     HARVESTING: 2,
-    UPGRADING: 3
+    BUILDING: 3
 }
 
 function process(info) {
     switch(info.state)
     {
-        case UPGRADER_STATE.IDLE:
+        case BUILDER_STATE.IDLE:
             info = idle(info);
             break;
-        case UPGRADER_STATE.COLLECTING_STORE:
+        case BUILDER_STATE.COLLECTING_STORE:
             info = collecting_store(info);
             break;
-        case UPGRADER_STATE.HARVESTING:
+        case BUILDER_STATE.HARVESTING:
             info = harvest(info);
             break;
-        case UPGRADER_STATE.UPGRADING:
-            info = upgrade(info);
+        case BUILDER_STATE.BUILDING:
+            info = build(info);
             break;
     }
 
@@ -27,6 +27,14 @@ function process(info) {
 }
 
 function idle(info) {
+    const creep = Game.creeps[info.creep];
+
+    if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0)
+    {
+        info.state = BUILDER_STATE.BUILDING;
+        info.targetSource = null;
+        return info;
+    }
 
     const targetStorage = Game.getObjectById(info.targetStorage);
 
@@ -36,7 +44,7 @@ function idle(info) {
 
         if(info.targetStorage != null)
         {
-            info.state = UPGRADER_STATE.COLLECTING_STORE;
+            info.state = BUILDER_STATE.COLLECTING_STORE;
             return info;
         }
 
@@ -49,7 +57,7 @@ function idle(info) {
             
             if(info.targetSource != null)
             {
-                info.state = UPGRADER_STATE.HARVESTING;
+                info.state = BUILDER_STATE.HARVESTING;
                 return info;
             }
         }
@@ -65,23 +73,23 @@ function collecting_store(info) {
     if(targetStorage == undefined)
     {
         info.targetSource = findSource(info);
-        info.state = UPGRADER_STATE.HARVESTING;
+        info.state = BUILDER_STATE.HARVESTING;
         return info;
     }
 
     let result = creep.withdraw(targetStorage, [RESOURCE_ENERGY]);
 
     if(result == ERR_NOT_IN_RANGE) {
-        creep.moveTo(roomController);
+        creep.moveTo(constructionSite);
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0)
     {
-        info.state = UPGRADER_STATE.UPGRADING;
+        info.state = BUILDER_STATE.BUILDING;
         info.targetStorage = null;
     }
     else
     {
-        info.state = UPGRADER_STATE.IDLE;
+        info.state = BUILDER_STATE.IDLE;
         info.targetStorage = null;
     }
 
@@ -94,7 +102,7 @@ function harvest(info) {
 
     if(source == null)
     {
-        info.state = UPGRADER_STATE.IDLE;   
+        info.state = BUILDER_STATE.IDLE;   
         return info;
     }
 
@@ -104,33 +112,60 @@ function harvest(info) {
         creep.moveTo(source);
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
-        info.state = UPGRADER_STATE.UPGRADING;
+        info.state = BUILDER_STATE.BUILDING;
+        info.constructionSite = findConstructionSite(info);
         info.targetSource = null;
     }
 
     return info;
 }
 
-function upgrade(info)
+function build(info)
 {
     const creep = Game.creeps[info.creep];
-    const roomController = Game.getObjectById(info.roomController);
+    const constructionSite = Game.getObjectById(info.constructionSite);
 
-    let result = creep.upgradeController(roomController);
+    if(constructionSite == undefined)
+    {
+        info.constructionSite = null;
+        info.state = BUILDER_STATE.IDLE;
+        return info;
+    }
+
+    let result = creep.build(constructionSite);
 
     if(result == ERR_NOT_IN_RANGE) {
-        creep.moveTo(roomController);
+        creep.moveTo(constructionSite);
     }
     else if(creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0)
     {
-        info.state = UPGRADER_STATE.IDLE;
+        info.state = BUILDER_STATE.IDLE;
     }
 
     return info;
 }
 
-function findSource(info)
+function findConstructionSite(info) 
 {
+    const creep = Game.creeps[info.creep];
+    const room = creep.room;
+
+    let constructionSites = room.find(FIND_CONSTRUCTION_SITES);
+
+    constructionSites = constructionSites.sort(function(x, y)
+    {
+        return y.pos - x.pos;
+    })
+
+    if (constructionSites.length == 0)
+    {
+        return null;   
+    }
+
+    return constructionSites[0].id;
+}
+
+function findSource(info) {
     const creep = Game.creeps[info.creep];
     const room = creep.room;
 

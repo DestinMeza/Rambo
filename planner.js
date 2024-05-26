@@ -6,7 +6,7 @@ const Node = require("./node");
 const NodeTree = require("./nodeTree");
 const WorldState = require("./worldState");
 
-const maxDepth = 20;
+const maxDepth = 5;
 
 class Planner {
 
@@ -33,17 +33,15 @@ class Planner {
             return;    
         }
 
-        //Create new World State to simulate
-        let worldSim = new WorldState();
-
         //Find best last action
         let lastNode = this.findLastNode(bestGoal, actions);
+
+        this.worldSim = new WorldState();
 
         let rootNodeWithChildren = this.findPlan(
             bestGoal, 
             actions, 
-            lastNode, 
-            worldSim,
+            lastNode,
             0
         );
 
@@ -52,7 +50,7 @@ class Planner {
             console.log("No plan could be found.");
             return;
         }
-
+        
         let nodeTree = new NodeTree({
             rootNode: rootNodeWithChildren
         });
@@ -81,7 +79,7 @@ class Planner {
 
             for(let conditionKey in bestGoal.postConditions)
             {
-                let condition = bestGoal.postConditions[conditionKey];
+                const condition = bestGoal.postConditions[conditionKey];
                 
                 if(action.postConditions.includes(condition))
                 {
@@ -111,10 +109,9 @@ class Planner {
      * @param {Goal} bestGoal
      * @param {Action[]} actions
      * @param {Node} node
-     * @param {WorldState} worldSim
      * @param {int} depth 
      */
-    findPlan(bestGoal, actions, node, worldSim, depth)
+    findPlan(bestGoal, actions, node, depth)
     {
         if(depth > maxDepth)
         {
@@ -128,9 +125,14 @@ class Planner {
 
         for(let i = 0; i < actions.length; i += 1)
         {
-            if(!this.isChildNodeable(node, actions[i], worldSim))
+            if(actions[i] == node.action)
             {
-                return undefined;
+                continue;
+            }
+
+            if(!this.isChildNodeable(node, actions[i]))
+            {
+                continue;
             }
 
             let childNode = new Node({
@@ -139,13 +141,16 @@ class Planner {
                 isMarked: false,
             })
 
-            node.children.push(childNode);
+            node.addChild(childNode);
 
-            let foundCompletedNode = this.findPlan(bestGoal, actions, childNode, depth + 1);
+            let newActions = actions.filter((_, index) => {
+                return index != i;
+            })
 
-            if(foundCompletedNode)
+            let foundCompletedNode = this.findPlan(bestGoal, newActions, childNode, depth + 1);
+
+            if(foundCompletedNode != undefined)
             {
-                childNode.isMarked = true;
                 return childNode;   
             }
         }
@@ -155,12 +160,11 @@ class Planner {
 
     /**\
      * @param {Node} parentNode
-     * @param {WorldState} worldState
      * @param {Action} action 
      */
-    isChildNodeable(parentNode, worldState, action)
+    isChildNodeable(parentNode, action)
     {
-        return parentNode.evaluateNode(worldState, action);
+        return parentNode.evaluateNode(this.worldSim, action);
     }
 
     /**
@@ -169,15 +173,102 @@ class Planner {
      * @param {Node} node 
      */
     isGoalSatisfied(bestGoal, node)
-    {        
-        bestGoal.postConditions.forEach(condition => {
-            if(!this.isConditionSatisfied(condition, node))
+    {
+        let rootNode = this.findRootNode(node);
+
+        //Check from root down tree if post conditions are met.
+        for(let i = 0; i < bestGoal.postConditions.length; i++)
+        {
+            const condition = bestGoal.postConditions[i];
+            if(!this.isPostConditionSatisfied(condition, rootNode))
             {
                 return false
             }
-        });
+        }
+
+        //Check if last node conditions satisfied.
+        if(!this.isPreConditionSatisfied(node))
+        {
+            return false;
+        }
+
+        this.markUpToParentNode(node);
+
+        return true;
+    }
+
+    markUpToParentNode(node)
+    {
+        if(node.parent == null)
+        {
+            return;
+        }
 
         node.isMarked = true;
+        this.markUpToParentNode(node.parent);
+    }
+
+    /**
+     * @param {Node} node 
+     */
+    findRootNode(node)
+    {
+        if(node.parent == null)
+        {
+            return node;
+        }
+
+        return this.findRootNode(node.parent);
+    }
+
+    /**
+     * @param {Condition} condition 
+     * @param {Node} node 
+     */
+    isPreConditionSatisfied(node)
+    {
+        if(node.action.preConditions.length == 0)
+        {
+            return true;   
+        }
+
+        let preconditionsToSatisfy = [];
+
+        //Check if precondition is satisfied
+        for(let i = 0; i < node.action.preConditions.length; i++) 
+        {
+            if(!node.action.preConditions[i].evaluate())
+            {
+                preconditionsToSatisfy.push(node.action.preConditions[i]);
+            }
+        }
+
+        if(preconditionsToSatisfy.length == 0)
+        {
+            return true;
+        }
+
+        //Check if children satisfy precondition.
+        for(let i = 0; i < preconditionsToSatisfy.length; i++) {
+            let hasPrecondition = false;
+
+            for(let j = 0; j < node.children.length; j++)
+            {
+                const child = node.children[j];
+
+                if(child.action.postConditions.includes(preconditionsToSatisfy[i]))
+                {
+                    hasPrecondition = true;
+                    break;
+                }
+            }
+
+            if(hasPrecondition == false) 
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -186,19 +277,22 @@ class Planner {
      * @param {Condition} condition 
      * @param {Node} node 
      */
-    isConditionSatisfied(condition, node)
+    isPostConditionSatisfied(condition, node)
     {
+        //Check Post-conditions
         if(node.action.postConditions.includes(condition))
         {
             return true;   
         }
 
-        node.children.forEach(childNode => {
-            if(this.isConditionSatisfied(condition, childNode))
+        for(let i = 0; i < node.children.length; i++)
+        {
+            const childNode = node.children[i];
+            if(this.isPostConditionSatisfied(condition, childNode))
             {
                 return true;   
             }
-        });
+        }
 
         return false;
     }

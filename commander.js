@@ -95,14 +95,21 @@ class Commander
                 console.log("Planner failed to return a valid plan.");
                 return;
             }
-
+            
             this.currentPlan = new Plan({
                 name: planInfo.goal.name,
                 actions: planInfo.actions,
                 actionIndex: 0
             });
 
-            console.log("Plan found,", this.currentPlan.name);
+            let printedActions = [];
+
+            for(let i = 0; i < planInfo.actions.length; i++)
+            {
+                printedActions.push(planInfo.actions[i].name);
+            }
+
+            console.log("Current Plan:", this.currentPlan.name, JSON.stringify(printedActions));
 
             Memory[this.name] = 
             {
