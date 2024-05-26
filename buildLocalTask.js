@@ -6,6 +6,28 @@ const BUILDER_STATE =
     BUILDING: 3
 }
 
+const buildingPriority = {
+    [STRUCTURE_SPAWN]: 0,
+    [STRUCTURE_EXTENSION]: 1,
+    [STRUCTURE_ROAD]: 2,
+    [STRUCTURE_WALL]: 3,
+    [STRUCTURE_RAMPART]: 4,
+    [STRUCTURE_PORTAL]: 5,
+    [STRUCTURE_CONTROLLER]: 6,
+    [STRUCTURE_LINK]: 7,
+    [STRUCTURE_STORAGE]: 8,
+    [STRUCTURE_TOWER]: 9,
+    [STRUCTURE_OBSERVER]: 10,
+    [STRUCTURE_POWER_BANK]: 11,
+    [STRUCTURE_POWER_SPAWN]: 12,
+    [STRUCTURE_EXTRACTOR]: 13,
+    [STRUCTURE_LAB]: 14,
+    [STRUCTURE_TERMINAL]: 15,
+    [STRUCTURE_CONTAINER]: 16,
+    [STRUCTURE_NUKER]: 17,
+    [STRUCTURE_FACTORY]: 18,
+}
+
 function process(info) {
     switch(info.state)
     {
@@ -109,7 +131,11 @@ function harvest(info) {
     let result = creep.harvest(source);
 
     if(result == ERR_NOT_IN_RANGE) {
-        creep.moveTo(source);
+        result = creep.moveTo(source);
+        if(result == ERR_NO_PATH)
+        {
+            info.targetSource = findSource(info);
+        }
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
         info.state = BUILDER_STATE.BUILDING;
@@ -154,7 +180,7 @@ function findConstructionSite(info)
 
     constructionSites = constructionSites.sort(function(x, y)
     {
-        return y.pos - x.pos;
+        return buildingPriority[x.structureType] - buildingPriority[y.structureType];
     })
 
     if (constructionSites.length == 0)

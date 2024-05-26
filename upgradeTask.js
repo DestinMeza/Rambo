@@ -101,7 +101,11 @@ function harvest(info) {
     let result = creep.harvest(source);
 
     if(result == ERR_NOT_IN_RANGE) {
-        creep.moveTo(source);
+        result = creep.moveTo(source);
+        if(result == ERR_NO_PATH)
+        {
+            info.targetSource = findSource(info);
+        }
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
         info.state = UPGRADER_STATE.UPGRADING;

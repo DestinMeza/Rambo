@@ -45,15 +45,15 @@ class Node
         }
 
         //Check if non met conditions are satisfied
-        // for(let i = 0; i < notMetConditions.length; i++)
-        // {
-        //     const condition = notMetConditions[i];
+        for(let i = 0; i < notMetConditions.length; i++)
+        {
+            const condition = notMetConditions[i];
 
-        //     if(condition.evaluate() == false)
-        //     {
-        //         return false;
-        //     }
-        // }
+            if(condition.evaluate() == false)
+            {
+                return false;
+            }
+        }
         
         worldSim.process(); //Reset State
         return true;

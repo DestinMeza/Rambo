@@ -92,7 +92,6 @@ class Commander
 
             if(planInfo == undefined)
             {
-                console.log("Planner failed to return a valid plan.");
                 return;
             }
             
@@ -110,33 +109,26 @@ class Commander
             }
 
             console.log("Current Plan:", this.currentPlan.name, JSON.stringify(printedActions));
-
-            Memory[this.name] = 
-            {
-                name: this.name,
-                plan: this.getPlanSerializable()
-            }
         }
-        else {
-            let processState = this.currentPlan.process();
 
-            switch(processState)
-            {
-                case PROCESS.RUNNING:
-                    break;
-                case PROCESS.FAILURE:
-                    this.currentPlan = null;
-                    break;
-                case PROCESS.SUCCESS:
-                    this.currentPlan = null;
-                    break;
-            }
+        let processState = this.currentPlan.process();
 
-            Memory[this.name] = 
-            {
-                name: this.name,
-                plan: this.getPlanSerializable()
-            }
+        switch(processState)
+        {
+            case PROCESS.RUNNING:
+                break;
+            case PROCESS.FAILURE:
+                this.currentPlan = null;
+                break;
+            case PROCESS.SUCCESS:
+                this.currentPlan = null;
+                break;
+        }
+
+        Memory[this.name] = 
+        {
+            name: this.name,
+            plan: this.getPlanSerializable()
         }
 
         this.isCreatedFrame = false;

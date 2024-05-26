@@ -26,17 +26,17 @@ class WorldState
         this.constructionSiteCount = this.constructionSites.length;
         this.isMaxBuildingCount = true;
 
-        let roomMemory = Memory.rooms[this.room.name];
+        const roomMemory = Memory.rooms[this.room.name];
 
         if(roomMemory != undefined)
         {
-            let blueprint = roomMemory.blueprint;
+            this.blueprint = roomMemory.blueprint;
 
-            if(blueprint != undefined)
+            if(this.blueprint != undefined)
             {
-                for(const buildingKey in blueprint.buildings)
+                for(const buildingKey in this.blueprint.buildings)
                 {
-                    const building = blueprint.buildings[buildingKey];
+                    const building = this.blueprint.buildings[buildingKey];
                     let maxCount = CONTROLLER_STRUCTURES[building.type][this.roomControllerLevel];
                     let bluePrintMax = building.positions.length;
 
@@ -60,22 +60,24 @@ class WorldState
 
         for(const creep in Game.creeps)
         {
-            if(Game.creeps[creep] == undefined)
+            const creepObj = Game.creeps[creep];
+
+            if(creepObj == undefined || creepObj.memory.task == undefined)
             {
                 continue;   
             }
 
             this.creepsAlive += 1;
 
-            if(Game.creeps[creep].memory.task.name == "Harvest and Return")
+            if(creepObj.memory.task.name == "Harvest and Return")
             {
                 this.harvesters += 1;
             }
-            if(Game.creeps[creep].memory.task.name == "Upgrade")
+            if(creepObj.memory.task.name == "Upgrade")
             {
                 this.upgraders += 1;
             }
-            if(Game.creeps[creep].memory.task.name == "Build_Local")
+            if(creepObj.memory.task.name == "Build_Local")
             {
                 this.builders += 1;
             }
@@ -87,6 +89,10 @@ class WorldState
     setConditions()
     {
         this.conditions = {
+            Base_Level_Greater_Than_1: new Condition({
+                name: "Base_Level_Greater_Than_1",
+                condition: this.roomControllerLevel > 1
+            }),
             Harvester_Count_Threshold_Met: new Condition({
                 name: "Harvester_Count_Threshold_Met",
                 condition: this.harvesters > 5
@@ -147,6 +153,22 @@ class WorldState
                 name: "Active_Construction",
                 condition: this.constructionSiteCount > 0,
             }),
+            Can_Place_Structures: new Condition({
+                name: "Can_Place_Structures",
+                condition: this.constructionSiteCount < 100
+            }),
+            Blueprint_Exist: new Condition({
+                name: "Blueprint_Exist",
+                condition: this.blueprint != undefined
+            }),
+            Creep_Count_Zero: new Condition({
+                name: "Creep_Count_Zero",
+                condition: this.creepsAlive == 0
+            }),
+            Creep_Count_Not_Zero: new Condition({
+                name: "Creep_Count_Not_Zero",
+                condition: this.creepsAlive != 0
+            }),
             Room_Upgrading: new Condition({
                 name: "Room_Upgrading",
                 condition: this.upgraders > 0, 
@@ -173,7 +195,8 @@ class WorldState
             Spawn_Builder: [
                 this.conditions.Active_Construction,
                 this.conditions.Builder_Energy_Cost,
-                this.conditions.Not_Spawning
+                this.conditions.Not_Spawning,
+                this.conditions.Blueprint_Exist
             ],
             Place_Construction_Sites: [
                 this.conditions.Max_Building_Count_Not_Reached
@@ -191,6 +214,7 @@ class WorldState
                 this.conditions.Max_Building_Count_Reached
             ],
             Place_Construction_Sites: [
+                this.conditions.Blueprint_Exist,
                 this.conditions.Active_Construction
             ]
         }
@@ -200,15 +224,27 @@ class WorldState
                 this.conditions.Not_Spawning,
                 this.conditions.Harvester_Energy_Cost,
                 this.conditions.Harvester_Count_Threshold_Not_Met,
-                this.conditions.Energy_Not_At_MaxCapacity
             ],
             Upgrade_Room: [
+                this.conditions.Creep_Count_Not_Zero,
                 this.conditions.Not_Spawning,
                 this.conditions.Upgrader_Energy_Cost,
                 this.conditions.Upgrader_Count_Threshold_Not_Met
             ],
+            Create_Builders: [
+                this.conditions.Creep_Count_Not_Zero,
+                this.conditions.Active_Construction,
+                this.conditions.Not_Spawning,
+                this.conditions.Builder_Energy_Cost,
+                this.conditions.Builder_Count_Threshold_Not_Met,
+                this.conditions.Base_Level_Greater_Than_1,
+            ],
             Build_Additional_Structures: [
-                this.conditions.Max_Building_Count_Not_Reached
+                this.conditions.Creep_Count_Not_Zero,
+                this.conditions.Can_Place_Structures,
+                this.conditions.Base_Level_Greater_Than_1,
+                this.conditions.Max_Building_Count_Not_Reached,
+                this.conditions.Harvester_Count_Threshold_Met,
             ]
         }
 
@@ -219,9 +255,12 @@ class WorldState
             Upgrade_Room: [
                 this.conditions.Room_Upgrading
             ],
+            Create_Builders: [
+                this.conditions.Max_Building_Count_Reached
+            ],
             Build_Additional_Structures: [
                 this.conditions.Max_Building_Count_Reached
-            ]
+            ],
         }
 
         this.goalPriorityMap = 

@@ -46,10 +46,14 @@ function harvest(info) {
         return info;
     }
 
-    let error = creep.harvest(source);
+    let result = creep.harvest(source);
 
-    if(error == ERR_NOT_IN_RANGE) {
-        creep.moveTo(source);
+    if(result == ERR_NOT_IN_RANGE) {
+        result = creep.moveTo(source);
+        if(result == ERR_NO_PATH)
+        {
+            info.targetSource = findSource(info);
+        }
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
         info.state = HARVESTER_STATE.DEPOSITING;
@@ -71,9 +75,9 @@ function deposit(info)
         return info;
     }
 
-    let error = creep.transfer(storage, RESOURCE_ENERGY);
+    let result = creep.transfer(storage, RESOURCE_ENERGY);
 
-    if(error == ERR_NOT_IN_RANGE) {
+    if(result == ERR_NOT_IN_RANGE) {
         creep.moveTo(storage);
     }
     else if(creep.store.getUsedCapacity([RESOURCE_ENERGY]) == 0)

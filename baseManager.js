@@ -54,7 +54,6 @@ class BaseManager {
 
         if(originPosition == undefined)
         {
-            console.log("Origin Position not found. Failed to assign a base blueprint.");
             return;
         }
 

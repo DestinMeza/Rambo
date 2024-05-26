@@ -1,10 +1,11 @@
 const Task = require("./task");
+const CreepBuilder = require("./creepBuilder");
 
-const PROCESS = Object.freeze({
+const PROCESS = {
     RUNNING: 0,
     FAILURE: 1,
     SUCCESS: 2
-});
+};
 
 const HARVESTER_STATE =
 {
@@ -14,10 +15,12 @@ const HARVESTER_STATE =
 }
 
 function process (self) {
-    const creepName = "Harvester " +  self.data.randomNumber;
-    const spawn = Game.getObjectById(self.data.spawnId);
+    const creepName = "Harvester " +  self.randomNumber;
+    const spawn = Game.getObjectById(self.spawnId);
 
-    let code = spawn.spawnCreep([WORK, MOVE, CARRY], creepName);
+    const body = CreepBuilder.getCreepBody([WORK, MOVE, CARRY], [MOVE, CARRY], spawn.room.name);
+
+    let code = spawn.spawnCreep(body, creepName);
     
     switch(code)
     {
@@ -33,6 +36,12 @@ function process (self) {
 
             return PROCESS.SUCCESS;
         default:
+
+            if(Game.time - self.startTime < self.duration)
+            {
+                return PROCESS.RUNNING;
+            }
+
             return PROCESS.FAILURE;
     }
 }

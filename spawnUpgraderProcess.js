@@ -1,4 +1,5 @@
 const Task = require("./task");
+const CreepBuilder = require("./creepBuilder");
 
 const PROCESS = {
     RUNNING: 0,
@@ -15,10 +16,12 @@ const UPGRADER_STATE =
 }
 
 function process (self) {
-    const creepName = "Upgrader " +  self.data.randomNumber;
-    const spawn = Game.getObjectById(self.data.spawnId);
+    const creepName = "Upgrader " +  self.randomNumber;
+    const spawn = Game.getObjectById(self.spawnId);
 
-    let code = spawn.spawnCreep([WORK, MOVE, CARRY], creepName);
+    const body = CreepBuilder.getCreepBody([WORK, MOVE, CARRY], [MOVE, CARRY], spawn.room.name);
+
+    let code = spawn.spawnCreep(body, creepName);
     
     switch(code)
     {
@@ -35,6 +38,12 @@ function process (self) {
 
             return PROCESS.SUCCESS;
         default:
+
+            if(Game.time - self.startTime < self.duration)
+            {
+                return PROCESS.RUNNING;
+            }
+
             return PROCESS.FAILURE;
     }
 }

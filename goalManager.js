@@ -22,16 +22,22 @@ class GoalManager
             }),
             Upgrade_Room: new Goal({
                 name: "Upgrade_Room",
-                priority: 1.0,
+                priority: 0.9,
                 preconditions: [],
                 postconditions: []
             }),
             Build_Additional_Structures: new Goal({
                 name: "Build_Additional_Structures",
-                priority: 1.0,
+                priority: 0.8,
                 preconditions: [],
                 preconditions: [],
-            })
+            }),
+            Create_Builders: new Goal({
+                name: "Create_Builders",
+                priority: 0.7,
+                preconditions: [],
+                preconditions: [],
+            }),
         }
     }
 

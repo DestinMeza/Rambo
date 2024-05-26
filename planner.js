@@ -29,7 +29,6 @@ class Planner {
         let bestGoal = GoalEvaluator.evaluate(goals);
 
         if(bestGoal == undefined) {
-            console.log("No goal could be found.");
             return;    
         }
 
@@ -151,7 +150,8 @@ class Planner {
 
             if(foundCompletedNode != undefined)
             {
-                return childNode;   
+                let rootNode = this.findRootNode(childNode);
+                return rootNode;   
             }
         }
 

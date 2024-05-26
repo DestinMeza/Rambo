@@ -1,8 +1,8 @@
-const PROCESS = Object.freeze({
+const PROCESS = {
     RUNNING: 0,
     FAILURE: 1,
     SUCCESS: 2
-});
+};
 
 class Plan
 {
@@ -25,14 +25,20 @@ class Plan
 
         let processState = currentAction.process(currentAction);
 
-        if(processState == PROCESS.SUCCESS)
-        {
-            let newActionIndex = this.actionIndex += 1;
+        switch(processState) {
+            case PROCESS.SUCCESS:
+                let newActionIndex = this.actionIndex + 1;
 
-            if(newActionIndex > this.actions.length)
-            {
-                return PROCESS.SUCCESS; // SUCCESS
-            }
+                if(newActionIndex < this.actions.length)
+                {
+                    this.actionIndex = newActionIndex;
+                    processState = PROCESS.RUNNING;
+                    break;
+                }
+                
+                processState = PROCESS.SUCCESS;
+            default:
+                break;
         }
 
         return processState;

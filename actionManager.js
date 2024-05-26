@@ -27,7 +27,7 @@ class ActionManager
                     worldSim.creepsAlive = worldSim.creepsAlive + 1;
                 }],
                 process: (self) => spawnHarvesterProcess(self),
-                start: (self) => {}
+                start: (self) => { self.startTime = Game.time; }
             }),
             Spawn_Upgrader: new Action({
                 name: "Spawn_Upgrader",
@@ -36,7 +36,7 @@ class ActionManager
                     worldSim.creepsAlive = worldSim.creepsAlive + 1;
                 }],
                 process: (self) => spawnUpgraderProcess(self),
-                start: (self) => {}
+                start: (self) => { self.startTime = Game.time; }
             }),
             Spawn_Builder: new Action({
                 name: "Spawn_Builder",
@@ -45,7 +45,7 @@ class ActionManager
                     worldSim.creepsAlive = worldSim.creepsAlive + 1;
                 }],
                 process: (self) => spawnLocalBuilderProcess(self),
-                start: (self) => {}
+                start: (self) => { self.startTime = Game.time; }
             }),
             Place_Construction_Sites: new Action({
                 name: "Place_Construction_Sites",
@@ -53,7 +53,10 @@ class ActionManager
                     worldSim.constructionSiteCount = worldSim.constructionSiteCount + 1;
                 }],
                 process: (self) => placeLocalConstructionSiteProcess(self),
-                start: (self) => {}
+                start: (self) => {
+                    self.buildingTypeIndex = 0;
+                    self.buildingPosIndex = 0;
+                }
             }),
         };
     }
@@ -81,20 +84,36 @@ class ActionManager
 
     setActionProcessData()
     {
-        this.actionMap.Spawn_Harvester.data = {
+        this.setActionData("Spawn_Harvester", {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
-        }
-        this.actionMap.Spawn_Upgrader.data = {
+        });
+
+        this.setActionData("Spawn_Upgrader", {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
-        }
-        this.actionMap.Spawn_Builder.data = {
+        });
+
+        this.setActionData("Spawn_Builder", {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
-        }
-        this.actionMap.Place_Construction_Sites.data = {
+        });
+
+        this.setActionData("Place_Construction_Sites", {
             roomName: this.worldState.room.name
+        });
+    }
+
+    setActionData(actionKey, memberData) {
+        let data = this.actionMap[actionKey];
+
+        if (data == undefined) {
+            return;
+        }
+
+        for(const key in memberData)
+        {
+            data[key] = memberData[key];
         }
     }
     

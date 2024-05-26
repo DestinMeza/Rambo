@@ -13,11 +13,14 @@ module.exports.loop = function () {
 
     if(commander == null || worldState == null) {
         worldState = new WorldState();
+        baseManager = new BaseManager();
 
         commander = new Commander({
             name: "Test Commander",
             worldState: worldState
         });
+
+        baseManager.assignBase("sim", true);
     }
     else {
         worldState.process();

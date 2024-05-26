@@ -332,7 +332,7 @@ module.exports = {
       ]
     },
     lab: {
-      type: STRUCTURE_OBSERVER,
+      type: STRUCTURE_LAB,
       pos: [
         {x:25, y:27},
         {x:26, y:27},

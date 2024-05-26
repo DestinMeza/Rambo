@@ -12,7 +12,6 @@ class Action {
 
         if(info.data == undefined)
         {
-            info.data = null;
             return;
         }
 
