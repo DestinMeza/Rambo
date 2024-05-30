@@ -32,6 +32,12 @@ class GoalManager
                 preconditions: [],
                 preconditions: [],
             }),
+            Create_Transports: new Goal({
+                name: "Create_Transports",
+                priority: 0.7,
+                preconditions: [],
+                preconditions: [],
+            }),
             Create_Builders: new Goal({
                 name: "Create_Builders",
                 priority: 0.7,

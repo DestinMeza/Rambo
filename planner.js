@@ -46,7 +46,6 @@ class Planner {
 
         if(rootNodeWithChildren == undefined)
         {
-            console.log("No plan could be found.");
             return;
         }
         
@@ -58,7 +57,6 @@ class Planner {
 
         //Find target plan recursively
         if(plannedActions == undefined || plannedActions.length == 0) {
-            console.log("No plan could be found.");
             return;
         }
 

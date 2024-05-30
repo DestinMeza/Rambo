@@ -4,6 +4,7 @@ const Action = require("./action");
 const spawnHarvesterProcess = require("./spawnHarvesterProcess");
 const spawnUpgraderProcess = require("./spawnUpgraderProcess");
 const spawnLocalBuilderProcess = require("./spawnBuilderProcess");
+const spawnTransporterProcess = require("./spawnTransporterProcess");
 const placeLocalConstructionSiteProcess = require("./placeLocalConstructionSitesProcess");
 
 const PROCESS = Object.freeze({
@@ -45,6 +46,15 @@ class ActionManager
                     worldSim.creepsAlive = worldSim.creepsAlive + 1;
                 }],
                 process: (self) => spawnLocalBuilderProcess(self),
+                start: (self) => { self.startTime = Game.time; }
+            }),
+            Spawn_Transporter: new Action({
+                name: "Spawn_Transporter",
+                effects: [(worldSim) => {
+                    worldSim.transporters = worldSim.transporters + 1;
+                    worldSim.creepsAlive = worldSim.creepsAlive + 1;
+                }],
+                process: (self) => spawnTransporterProcess(self),
                 start: (self) => { self.startTime = Game.time; }
             }),
             Place_Construction_Sites: new Action({
@@ -95,6 +105,11 @@ class ActionManager
         });
 
         this.setActionData("Spawn_Builder", {
+            randomNumber: this.worldState.randomNumber,
+            spawnId: this.worldState.spawn.id
+        });
+
+        this.setActionData("Spawn_Transporter", {
             randomNumber: this.worldState.randomNumber,
             spawnId: this.worldState.spawn.id
         });

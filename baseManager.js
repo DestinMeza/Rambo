@@ -45,10 +45,10 @@ class BaseManager {
     {
         let roomInfo = Memory.rooms[roomName];
 
-        // if(roomInfo != undefined && roomInfo.blueprint != undefined)
-        // {
-        //     return;
-        // }
+        if(roomInfo != undefined && roomInfo.blueprint != undefined)
+        {
+            return;
+        }
 
         let originPosition = isMain ? this.getMainOrigin(roomName) : this.getBestOrigin(roomName);
 

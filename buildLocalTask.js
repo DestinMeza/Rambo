@@ -51,7 +51,7 @@ function process(info) {
 function idle(info) {
     const creep = Game.creeps[info.creep];
 
-    if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0)
+    if(creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
     {
         info.state = BUILDER_STATE.BUILDING;
         info.targetSource = null;
@@ -121,6 +121,14 @@ function collecting_store(info) {
 function harvest(info) {
     const creep = Game.creeps[info.creep];
     const source = Game.getObjectById(info.targetSource);
+
+    if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
+    {
+        info.targetStorage = null;
+        info.constructionSite = findConstructionSite(info);
+        info.state = info.constructionSite == null ? BUILDER_STATE.IDLE : BUILDER_STATE.BUILDING;
+        return info;
+    }
 
     if(source == null)
     {

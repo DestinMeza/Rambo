@@ -23,6 +23,7 @@ class WorldState
         this.harvesters = 0;
         this.upgraders = 0;
         this.builders = 0;
+        this.transports = 0;
         this.constructionSiteCount = this.constructionSites.length;
         this.isMaxBuildingCount = true;
 
@@ -77,9 +78,13 @@ class WorldState
             {
                 this.upgraders += 1;
             }
-            if(creepObj.memory.task.name == "Build_Local")
+            if(creepObj.memory.task.name == "Build Local")
             {
                 this.builders += 1;
+            }
+            if(creepObj.memory.task.name == "Transport")
+            {
+                this.transports += 1;
             }
         }
         
@@ -107,11 +112,11 @@ class WorldState
             }),
             Upgrader_Count_Threshold_Met: new Condition({
                 name: "Upgrader_Count_Threshold_Met",
-                condition: this.upgraders > 5
+                condition: this.upgraders >= 2
             }),
             Upgrader_Count_Threshold_Not_Met: new Condition({
                 name: "Upgrader_Count_Threshold_Not_Met",
-                condition: this.upgraders <= 5
+                condition: this.upgraders < 2
             }),
             Upgrader_Energy_Cost: new Condition({
                 name: "Upgrader_Energy_Cost",
@@ -119,15 +124,27 @@ class WorldState
             }),
             Builder_Count_Threshold_Met: new Condition({
                 name: "Builder_Count_Threshold_Met",
-                condition: this.builders > 5
+                condition: this.builders >= 2
             }),
             Builder_Count_Threshold_Not_Met: new Condition({
                 name: "Builder_Count_Threshold_Not_Met",
-                condition: this.builders <= 5
+                condition: this.builders < 2
             }),
             Builder_Energy_Cost: new Condition({
                 name: "Builder_Energy_Cost",
                 condition: this.energy > 200
+            }),
+            Transporter_Count_Threshold_Met: new Condition({
+                name: "Transporter_Count_Threshold_Met",
+                condition: this.transports >= 8
+            }),
+            Transporter_Count_Threshold_Not_Met: new Condition({
+                name: "Transporter_Count_Threshold_Not_Met",
+                condition: this.transports < 8
+            }),
+            Transporter_Energy_Cost: new Condition({
+                name: "Transporter_Energy_Cost",
+                condition: this.energy > 100
             }),
             Not_Spawning: new Condition({
                 name: "Not_Spawning",
@@ -160,6 +177,10 @@ class WorldState
             Blueprint_Exist: new Condition({
                 name: "Blueprint_Exist",
                 condition: this.blueprint != undefined
+            }),
+            Transporter_Count_Ratio_Not_Exceeded: new Condition({
+                name: "Transporter_Count_Ratio_Not_Exceeded",
+                condition: this.transports / Math.max(0, this.harvesters) < 2
             }),
             Creep_Count_Zero: new Condition({
                 name: "Creep_Count_Zero",
@@ -198,6 +219,11 @@ class WorldState
                 this.conditions.Not_Spawning,
                 this.conditions.Blueprint_Exist
             ],
+            Spawn_Transporter: [
+                this.conditions.Creep_Count_Not_Zero,
+                this.conditions.Transporter_Energy_Cost,
+                this.conditions.Not_Spawning,
+            ],
             Place_Construction_Sites: [
                 this.conditions.Max_Building_Count_Not_Reached
             ]
@@ -212,6 +238,9 @@ class WorldState
             ],
             Spawn_Builder: [
                 this.conditions.Max_Building_Count_Reached
+            ],
+            Spawn_Transporter: [
+                this.conditions.Creep_Count_Not_Zero
             ],
             Place_Construction_Sites: [
                 this.conditions.Blueprint_Exist,
@@ -230,6 +259,12 @@ class WorldState
                 this.conditions.Not_Spawning,
                 this.conditions.Upgrader_Energy_Cost,
                 this.conditions.Upgrader_Count_Threshold_Not_Met
+            ],
+            Create_Transports: [
+                this.conditions.Transporter_Count_Ratio_Not_Exceeded,
+                this.conditions.Transporter_Count_Threshold_Not_Met,
+                this.conditions.Creep_Count_Not_Zero,
+                this.conditions.Not_Spawning,
             ],
             Create_Builders: [
                 this.conditions.Creep_Count_Not_Zero,
@@ -257,6 +292,9 @@ class WorldState
             ],
             Create_Builders: [
                 this.conditions.Max_Building_Count_Reached
+            ],
+            Create_Transports: [
+                this.conditions.Creep_Count_Not_Zero,
             ],
             Build_Additional_Structures: [
                 this.conditions.Max_Building_Count_Reached

@@ -92,6 +92,13 @@ function harvest(info) {
     const creep = Game.creeps[info.creep];
     const source = Game.getObjectById(info.targetSource);
 
+    if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
+    {
+        info.targetSource = null;
+        info.state = UPGRADER_STATE.UPGRADING;
+        return info;
+    }
+
     if(source == null)
     {
         info.state = UPGRADER_STATE.IDLE;   

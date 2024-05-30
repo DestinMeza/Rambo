@@ -69,6 +69,14 @@ function deposit(info)
     const creep = Game.creeps[info.creep];
     let storage = Game.getObjectById(info.targetStorage);
 
+    if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
+    {
+        info.targetStorage = null;
+        info.targetSource = findSource(info);
+        info.state = info.targetSource == null ? HARVESTER_STATE.IDLE : HARVESTER_STATE.HARVESTING
+        return info;
+    }
+
     if(storage == null)
     {
         info.targetStorage = findStorage(info);
@@ -79,12 +87,6 @@ function deposit(info)
 
     if(result == ERR_NOT_IN_RANGE) {
         creep.moveTo(storage);
-    }
-    else if(creep.store.getUsedCapacity([RESOURCE_ENERGY]) == 0)
-    {
-        info.targetStorage = null;
-        info.targetSource = findSource(info);
-        info.state = info.targetSource == null ? HARVESTER_STATE.IDLE : HARVESTER_STATE.HARVESTING
     }
 
     return info;
