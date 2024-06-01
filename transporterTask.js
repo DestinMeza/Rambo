@@ -19,8 +19,8 @@ const functionalBuildings = [
 ];
 
 const creepsWhoNeedEnergy = [
-    "Upgrade",
-    "Build Local"
+    "Upgrade_Local",
+    "Build_Local"
 ];
 
 function process(info) {

@@ -1,11 +1,9 @@
-const TaskManager = require("./taskManager");
+const Tasks = require("./tasks");
 
 class CreepRunner
 {
     static run()
     {
-        let taskManager = new TaskManager();
-
         for(const creep in Game.creeps)
         {
             let task = Game.creeps[creep].memory.task;
@@ -15,7 +13,7 @@ class CreepRunner
                 continue;
             }
 
-            let processFunc = taskManager.taskMap[task.name];
+            let processFunc = Tasks[task.name];
 
             if(typeof processFunc != "function")
             {

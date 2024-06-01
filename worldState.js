@@ -1,312 +1,133 @@
 const Condition = require("./condition");
+const Action = require("./action");
+const Goal = require("./goal");
+const Tasks = require("./tasks");
+
+const placeConstructionProcess = require("./placeConstructionProcess");
+
+//-------- GOAP MODULES
+
+const ROOM_ACTIONS = require("./room_actions");
+const ROOM_GOALS = require("./room_goals");
+const ROOM_CONDITIONS = require("./room_conditions");
+
+//--------
+
+let instance;
 
 class WorldState
 {
     constructor()
     {
-        this.process();
-    }
-
-    process()
-    {
-        this.spawn = Game.spawns['Spawn1'];
-        this.store = this.spawn.store;
-        this.room = this.spawn.room;
-        this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
-        this.roomController = this.room.controller;
-        this.roomControllerLevel = this.roomController.level;
-        this.energy = this.store[RESOURCE_ENERGY];
-        this.energyCapacity = this.store.getCapacity(RESOURCE_ENERGY);
-        this.randomNumber = Math.floor(Math.random() * 10000);
-        this.capacityRatio = this.store.getUsedCapacity(RESOURCE_ENERGY) / this.store.getCapacity(RESOURCE_ENERGY);
-        this.creepsAlive = 0;
-        this.harvesters = 0;
-        this.upgraders = 0;
-        this.builders = 0;
-        this.transports = 0;
-        this.constructionSiteCount = this.constructionSites.length;
-        this.isMaxBuildingCount = true;
-
-        const roomMemory = Memory.rooms[this.room.name];
-
-        if(roomMemory != undefined)
-        {
-            this.blueprint = roomMemory.blueprint;
-
-            if(this.blueprint != undefined)
-            {
-                for(const buildingKey in this.blueprint.buildings)
-                {
-                    const building = this.blueprint.buildings[buildingKey];
-                    let maxCount = CONTROLLER_STRUCTURES[building.type][this.roomControllerLevel];
-                    let bluePrintMax = building.positions.length;
-
-                    if(maxCount == 0)
-                    {
-                        continue;   
-                    }
-
-                    let currentStructureCount = this.room.find(FIND_MY_STRUCTURES, {
-                        filter: { structureType: building.type }
-                    }).length;
-
-                    if(currentStructureCount < maxCount && currentStructureCount < bluePrintMax)
-                    {
-                        this.isMaxBuildingCount = false;
-                        break;
-                    }
-                }
-            }
+        if (instance) {
+            return;
         }
 
-        for(const creep in Game.creeps)
-        {
-            const creepObj = Game.creeps[creep];
+        instance = this;
 
-            if(creepObj == undefined || creepObj.memory.task == undefined)
-            {
-                continue;   
-            }
-
-            this.creepsAlive += 1;
-
-            if(creepObj.memory.task.name == "Harvest and Return")
-            {
-                this.harvesters += 1;
-            }
-            if(creepObj.memory.task.name == "Upgrade")
-            {
-                this.upgraders += 1;
-            }
-            if(creepObj.memory.task.name == "Build Local")
-            {
-                this.builders += 1;
-            }
-            if(creepObj.memory.task.name == "Transport")
-            {
-                this.transports += 1;
-            }
+        this.randomNumber = Math.floor(Math.random() * 10000);
+        this.global = {
+            conditions: []
         }
         
-        this.setConditions();
+        this.rooms = [];
+
+        //Room Data initalization
+        for(const roomKey in Game.rooms)
+        {
+            this.rooms[roomKey] = registerRoom(roomKey);
+        }
     }
 
-    setConditions()
+    static process()
     {
-        this.conditions = {
-            Base_Level_Greater_Than_1: new Condition({
-                name: "Base_Level_Greater_Than_1",
-                condition: this.roomControllerLevel > 1
-            }),
-            Harvester_Count_Threshold_Met: new Condition({
-                name: "Harvester_Count_Threshold_Met",
-                condition: this.harvesters > 5
-            }),
-            Harvester_Count_Threshold_Not_Met: new Condition({
-                name: "Harvester_Count_Threshold_Not_Met",
-                condition: this.harvesters <= 5
-            }),
-            Harvester_Energy_Cost: new Condition({
-                name: "Harvester_Energy_Cost",
-                condition: this.energy > 200
-            }),
-            Upgrader_Count_Threshold_Met: new Condition({
-                name: "Upgrader_Count_Threshold_Met",
-                condition: this.upgraders >= 2
-            }),
-            Upgrader_Count_Threshold_Not_Met: new Condition({
-                name: "Upgrader_Count_Threshold_Not_Met",
-                condition: this.upgraders < 2
-            }),
-            Upgrader_Energy_Cost: new Condition({
-                name: "Upgrader_Energy_Cost",
-                condition: this.energy > 200
-            }),
-            Builder_Count_Threshold_Met: new Condition({
-                name: "Builder_Count_Threshold_Met",
-                condition: this.builders >= 2
-            }),
-            Builder_Count_Threshold_Not_Met: new Condition({
-                name: "Builder_Count_Threshold_Not_Met",
-                condition: this.builders < 2
-            }),
-            Builder_Energy_Cost: new Condition({
-                name: "Builder_Energy_Cost",
-                condition: this.energy > 200
-            }),
-            Transporter_Count_Threshold_Met: new Condition({
-                name: "Transporter_Count_Threshold_Met",
-                condition: this.transports >= 8
-            }),
-            Transporter_Count_Threshold_Not_Met: new Condition({
-                name: "Transporter_Count_Threshold_Not_Met",
-                condition: this.transports < 8
-            }),
-            Transporter_Energy_Cost: new Condition({
-                name: "Transporter_Energy_Cost",
-                condition: this.energy > 100
-            }),
-            Not_Spawning: new Condition({
-                name: "Not_Spawning",
-                condition: this.spawn.spawning == undefined
-            }),
-            Energy_At_MaxCapacity: new Condition({
-                name: "Energy_At_MaxCapacity",
-                condition: this.energy >= this.energyCapacity
-            }),
-            Energy_Not_At_MaxCapacity: new Condition({
-                name: "Energy_Not_At_MaxCapacity",
-                condition: this.energy < this.energyCapacity
-            }),
-            Max_Building_Count_Reached: new Condition({
-                name: "Max_Building_Count_Reached",
-                condition: this.isMaxBuildingCount,
-            }),
-            Max_Building_Count_Not_Reached: new Condition({
-                name: "Max_Building_Count_Not_Reached",
-                condition: !this.isMaxBuildingCount,
-            }),
-            Active_Construction: new Condition({
-                name: "Active_Construction",
-                condition: this.constructionSiteCount > 0,
-            }),
-            Can_Place_Structures: new Condition({
-                name: "Can_Place_Structures",
-                condition: this.constructionSiteCount < 100
-            }),
-            Blueprint_Exist: new Condition({
-                name: "Blueprint_Exist",
-                condition: this.blueprint != undefined
-            }),
-            Transporter_Count_Ratio_Not_Exceeded: new Condition({
-                name: "Transporter_Count_Ratio_Not_Exceeded",
-                condition: this.transports / Math.max(0, this.harvesters) < 2
-            }),
-            Creep_Count_Zero: new Condition({
-                name: "Creep_Count_Zero",
-                condition: this.creepsAlive == 0
-            }),
-            Creep_Count_Not_Zero: new Condition({
-                name: "Creep_Count_Not_Zero",
-                condition: this.creepsAlive != 0
-            }),
-            Room_Upgrading: new Condition({
-                name: "Room_Upgrading",
-                condition: this.upgraders > 0, 
-            }),
-            Room_Downgrade_Threshold: new Condition({
-                name: "Room_Downgrade_Threshold",
-                condition: this.roomController.ticksToDownGrade <= 10000, 
-            }),
-            Room_Can_LevelUp: new Condition({
-                name: "Room_Can_LevelUp",
-                condition: this.energy >= this.roomController.progressTotal - this.roomController.process
-            }),
-        };
+        this.randomNumber = Math.floor(Math.random() * 10000);
 
-        this.actionPreConditionMap = {
-            Spawn_Harvester: [
-                this.conditions.Harvester_Energy_Cost, 
-                this.conditions.Not_Spawning
-            ],
-            Spawn_Upgrader: [
-                this.conditions.Upgrader_Energy_Cost, 
-                this.conditions.Not_Spawning
-            ],
-            Spawn_Builder: [
-                this.conditions.Active_Construction,
-                this.conditions.Builder_Energy_Cost,
-                this.conditions.Not_Spawning,
-                this.conditions.Blueprint_Exist
-            ],
-            Spawn_Transporter: [
-                this.conditions.Creep_Count_Not_Zero,
-                this.conditions.Transporter_Energy_Cost,
-                this.conditions.Not_Spawning,
-            ],
-            Place_Construction_Sites: [
-                this.conditions.Max_Building_Count_Not_Reached
-            ]
-        }
-
-        this.actionPostConditionMap = {
-            Spawn_Harvester: [
-                this.conditions.Energy_At_MaxCapacity
-            ],
-            Spawn_Upgrader: [
-                this.conditions.Room_Upgrading
-            ],
-            Spawn_Builder: [
-                this.conditions.Max_Building_Count_Reached
-            ],
-            Spawn_Transporter: [
-                this.conditions.Creep_Count_Not_Zero
-            ],
-            Place_Construction_Sites: [
-                this.conditions.Blueprint_Exist,
-                this.conditions.Active_Construction
-            ]
-        }
-
-        this.goalPreConditionMap = {
-            Collect_Energy: [
-                this.conditions.Not_Spawning,
-                this.conditions.Harvester_Energy_Cost,
-                this.conditions.Harvester_Count_Threshold_Not_Met,
-            ],
-            Upgrade_Room: [
-                this.conditions.Creep_Count_Not_Zero,
-                this.conditions.Not_Spawning,
-                this.conditions.Upgrader_Energy_Cost,
-                this.conditions.Upgrader_Count_Threshold_Not_Met
-            ],
-            Create_Transports: [
-                this.conditions.Transporter_Count_Ratio_Not_Exceeded,
-                this.conditions.Transporter_Count_Threshold_Not_Met,
-                this.conditions.Creep_Count_Not_Zero,
-                this.conditions.Not_Spawning,
-            ],
-            Create_Builders: [
-                this.conditions.Creep_Count_Not_Zero,
-                this.conditions.Active_Construction,
-                this.conditions.Not_Spawning,
-                this.conditions.Builder_Energy_Cost,
-                this.conditions.Builder_Count_Threshold_Not_Met,
-                this.conditions.Base_Level_Greater_Than_1,
-            ],
-            Build_Additional_Structures: [
-                this.conditions.Creep_Count_Not_Zero,
-                this.conditions.Can_Place_Structures,
-                this.conditions.Base_Level_Greater_Than_1,
-                this.conditions.Max_Building_Count_Not_Reached,
-                this.conditions.Harvester_Count_Threshold_Met,
-            ]
-        }
-
-        this.goalPostConditionMap = {
-            Collect_Energy: [
-                this.conditions.Energy_At_MaxCapacity
-            ],
-            Upgrade_Room: [
-                this.conditions.Room_Upgrading
-            ],
-            Create_Builders: [
-                this.conditions.Max_Building_Count_Reached
-            ],
-            Create_Transports: [
-                this.conditions.Creep_Count_Not_Zero,
-            ],
-            Build_Additional_Structures: [
-                this.conditions.Max_Building_Count_Reached
-            ],
-        }
-
-        this.goalPriorityMap = 
+        for(const roomKey in Game.rooms)
         {
-            Collect_Energy: 1.0,
-            Upgrade_Room: 1.0,
-            Build_Additional_Structures: 1.0,
+            updateRoom(roomKey);
         }
+
+        //TODO setup global object
+        //This is useful for having a place for global states that are helpful for the Bot.
+        this.global = {}
+    }
+
+    static getInstance()
+    {
+        return instance;
+    }
+
+    getGoals()
+    {
+        let goals = [];
+
+        for(const roomKey in Game.rooms)
+        {
+            const roomInfo = this.rooms[roomKey];
+
+            if(!roomInfo.goals)
+            {
+                continue;
+            }
+
+            for(const goalKey in roomInfo.goals)
+            {
+                const action = roomInfo.goals[goalKey];
+
+                goals.push(action);
+            }
+        }
+
+        return goals;
+    }
+
+    getActions()
+    {
+        let actions = [];
+
+        for(const roomKey in Game.rooms)
+        {
+            const roomInfo = this.rooms[roomKey];
+
+            if(!roomInfo.actions)
+            {
+                continue;
+            }
+
+            for(const actionKey in roomInfo.actions)
+            {
+                const action = roomInfo.actions[actionKey];
+
+                actions.push(action);
+            }
+        }
+
+        return actions;
+    }
+
+    getConditions()
+    {
+        let conditions = [];
+
+        for(const roomKey in Game.rooms)
+        {
+            const roomInfo = this.rooms[roomKey];
+
+            if(!roomInfo.conditions)
+            {
+                continue;
+            }
+
+            for(const conditionKey in roomInfo.conditions)
+            {
+                const condition = roomInfo.conditions[conditionKey];
+
+                conditions.push(condition);
+            }
+        }
+
+        return conditions;
     }
 
     simulateStateChange(effects)
@@ -314,9 +135,358 @@ class WorldState
         effects.forEach(effect => {
             effect(this);
         });
-
-        this.setConditions();
     }
+}
+
+function updateRoom(roomKey)
+{
+    const roomInfo = instance.rooms[roomKey];
+
+    roomInfo.my = roomInfo.room.controller.my;
+    if(roomInfo.my)
+    {
+        roomInfo.conditions = getRoomConditions(roomKey);
+    }
+}
+
+function registerRoom(roomKey)
+{
+    const room = Game.rooms[roomKey];
+
+    instance.rooms[roomKey] = {};
+
+    let roomInfo = instance.rooms[roomKey];
+
+    roomInfo.name = roomKey;
+    roomInfo.room = room;
+    roomInfo.my = room.controller.my;
+
+    if(roomInfo.my)
+    {
+        roomInfo = setOwnedRoom(roomKey);
+    }
+    else
+    {
+        roomInfo = setNotOwnedRooms(roomKey);
+    }
+
+    return roomInfo;
+}
+
+function setOwnedRoom(roomKey)
+{
+    let roomInfo = instance.rooms[roomKey];
+
+    roomInfo.controller = roomInfo.room.controller;
+    roomInfo.stores = getRoomStorages(roomKey);
+    roomInfo.constructionSites = getConstructionSites(roomKey);
+    roomInfo.energy = getEnergy(roomKey);
+    roomInfo.energyCapacity = getEnergyCapacity(roomKey);
+    roomInfo.capacityRatio = roomInfo.energy / roomInfo.energyCapacity;
+    roomInfo.creeps = getRoomCreeps(roomKey);
+    roomInfo.harvesters = getCreepsWithTaskFilter(roomKey, Tasks.keys.Harvest_Return_Local);
+    roomInfo.builders =  getCreepsWithTaskFilter(roomKey, Tasks.keys.Build_Local);
+    roomInfo.transports = getCreepsWithTaskFilter(roomKey, Tasks.keys.Transport_Local);
+    roomInfo.upgraders = getCreepsWithTaskFilter(roomKey, Tasks.keys.Upgrade_Local);
+    roomInfo.conditions = getRoomConditions(roomKey);
+    roomInfo.actions = getOwnedRoomActions(roomKey);
+    roomInfo.goals = getRoomGoals(roomKey);
+    roomInfo.blueprint = roomInfo.room.memory.blueprint;
+
+    return roomInfo;
+}
+
+function setNotOwnedRooms(roomKey)
+{
+    //TODO get room data.
+    return null;
+}
+
+function getOwnedRoomActions(roomKey)
+{
+    let spawnActions = getSpawnActions(roomKey);
+
+    let actions = {};
+
+    for(const spawnActionKey in spawnActions)
+    {
+        actions[spawnActionKey] = spawnActions[spawnActionKey];    
+    }
+
+    createAction(actions, {
+        name: "Place_Construction",
+        room: roomKey,
+        cost: 1.0,
+        effects: [(worldSim) => {
+        }],
+        process: (self) => placeConstructionProcess(self),
+        start: (self) => { }
+    });
+
+    return actions;
+}
+
+function getRoomGoals(roomKey)
+{
+    const roomInfo = instance.rooms[roomKey];
+
+    let roomGoals = {}
+
+    const PRIORITES = 
+    {
+        [ROOM_GOALS.Collect_Energy.name]: { 
+            name: "collectEnergyPriority",
+            value: roomInfo.capacityRatio,
+        }
+    }
+
+    for(const KEY in ROOM_GOALS)
+    {
+        const goalInfo = ROOM_GOALS[KEY];
+
+        createGoal(roomGoals, {
+            name: goalInfo.name,
+            priority: goalInfo.getPriority(PRIORITES[KEY].value),
+            preConditions: goalInfo.preConditions,
+            postConditions: goalInfo.postConditions
+        });
+    }
+
+    return roomGoals;
+}
+
+function getSpawnActions(roomKey)
+{
+    const room = Game.rooms[roomKey];
+
+    let spawns = room.find(FIND_STRUCTURES, {filter: structure => {
+        return structure.structureType == STRUCTURE_SPAWN && !structure.spawning;
+    }})
+
+    if(spawns.length == 0)
+    {
+        return {};   
+    }
+
+    let spawnActions = {};
+
+    const ACTION_DATA = 
+    {
+        [ROOM_ACTIONS.Spawn_Worker_Creep.name]: { 
+            randomNumber: instance.randomNumber,
+            spawnId: spawns[0].id,
+        }
+    }
+
+    for(const KEY in ROOM_ACTIONS)
+    {
+        const actionInfo = ROOM_ACTIONS[KEY];
+
+        createAction(spawnActions, {
+            name: actionInfo.name,
+            room: roomKey,
+            cost: actionInfo.cost,
+            effects: actionInfo.effects,
+            preConditions: actionInfo.preConditions,
+            postConditions: actionInfo.postConditions,
+            process: (self) => actionInfo.getProcess(self),
+            start: (self) => actionInfo.getStart(self),
+            data: actionInfo.getData(ACTION_DATA[KEY])
+        })
+    }
+
+    return spawnActions;
+}
+
+function createAction(map, info)
+{
+    let action = new Action({
+        name: info.name,
+        cost: info.cost,
+        room: info.room,
+        effects: info.effects,
+        process: info.process,
+        start: info.start,
+        preConditions: info.preConditions,
+        postConditions: info.postConditions,
+        data: info.data,
+        getPreConditions: function()
+        {
+            let preconditions = [];
+    
+            const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
+    
+            for(let i = 0; i < this.preConditions.length; i++)
+            {
+                const foundCondition = conditions[this.preConditions[i]];
+    
+                preconditions.push(foundCondition);
+            }
+    
+            return preconditions;
+        },
+        getPostConditions: function()
+        {
+            let postConditions = [];
+
+            const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
+
+            for(let i = 0; i < this.postConditions.length; i++)
+            {
+                const foundCondition = conditions[this.postConditions[i]];
+
+                postConditions.push(foundCondition);
+            }
+
+            return postConditions;
+        }
+    })
+
+    map[info.name] = action;
+}
+
+function createGoal(map, info)
+{
+    let goal = new Goal({
+        name: info.name,
+        priority: info.priority,
+        preConditions: info.preConditions,
+        postConditions: info.postConditions,
+        getPreConditions: function()
+        {
+            let preconditions = [];
+            
+            const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
+
+            for(let i = 0; i < this.preConditions.length; i++)
+            {
+                const foundCondition = conditions[this.preConditions[i]];
+    
+                preconditions.push(foundCondition);
+            }
+    
+            return preconditions;
+        },
+        getPostConditions: function()
+        {
+            let postConditions = [];
+
+            const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
+
+            for(let i = 0; i < this.postConditions.length; i++)
+            {
+                const foundCondition = conditions[this.postConditions[i]];
+
+                postConditions.push(foundCondition);
+            }
+
+            return postConditions;
+        }
+    })
+
+    map[info.name] = goal;
+}
+
+function createCondition(map, info)
+{
+    let condition = new Condition({
+        name: info.name,
+        condition: info.condition
+    })
+
+    map[info.name] = condition;
+}
+
+function getRoomStorages(roomKey)
+{
+    const room = Game.rooms[roomKey];
+    let storages = room.find(FIND_STRUCTURES, {filter: function(object){
+        return object.store != undefined;
+    }})
+
+    return storages;
+}
+
+function getConstructionSites(roomKey)
+{
+    const room = Game.rooms[roomKey];
+    let constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
+    return constructionSites;
+}
+
+function getEnergy(roomKey)
+{
+    const storages = getRoomStorages(roomKey);
+    
+    let energy = 0;
+
+    for(const storage in storages)
+    {
+        energy += storages[storage][RESOURCE_ENERGY];
+    }
+
+    return energy;
+}
+
+function getEnergyCapacity(roomKey)
+{
+    const storages = getRoomStorages(roomKey);
+    
+    let energy = 0;
+
+    for(const storageKey in storages)
+    {
+        const storage = storages[storageKey];
+
+        energy += storage.store.getCapacity(RESOURCE_ENERGY);
+    }
+
+    return energy;
+}
+
+function getRoomCreeps(roomKey)
+{
+    let creeps = [];
+    for(const creep in Game.creeps)
+    {
+        const creepObj = Game.creeps[creep];
+        if(creepObj.memory.originRoom == roomKey)
+        {
+            creeps.push(creep);
+        }
+    }
+
+    return creeps;
+}
+
+function getCreepsWithTaskFilter(roomKey, taskName)
+{
+    let creeps = getRoomCreeps(roomKey);
+
+    creeps = creeps.filter(creep => {
+        return Game.creeps[creep].memory.task == taskName;
+    })
+
+    return creeps;
+}
+
+function getRoomConditions(roomKey)
+{
+    const roomInfo = instance.rooms[roomKey];
+
+    let conditions = {}
+
+    for(const KEY in ROOM_CONDITIONS)
+    {
+        const conditionInfo = ROOM_CONDITIONS[KEY];
+
+        createCondition(conditions, {
+            name: conditionInfo.name,
+            condition: conditionInfo.getCondition(roomInfo)
+        })
+    }
+
+    return conditions;
 }
 
 module.exports = WorldState;

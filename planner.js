@@ -4,26 +4,17 @@ const Goal = require("./goal");
 const GoalEvaluator = require("./goalEvaluator");
 const Node = require("./node");
 const NodeTree = require("./nodeTree");
-const WorldState = require("./worldState");
+const Plan = require("./plan");
 
 const maxDepth = 5;
 
-class Planner {
-
-    /**
-     * @param {Object} info
-     * @param {string} info.name
-     */
-    constructor(info)
-    {
-        this.name = info.name;
-    }
-
+class Planner
+{
     /**
      * @param {Goal[]} goals 
      * @param {Action[]} actions
      */
-    plan(goals, actions)
+    static plan(goals, actions)
     {
         //Find target goal
         let bestGoal = GoalEvaluator.evaluate(goals);
@@ -33,11 +24,9 @@ class Planner {
         }
 
         //Find best last action
-        let lastNode = this.findLastNode(bestGoal, actions);
+        let lastNode = findLastNode(bestGoal, actions);
 
-        this.worldSim = new WorldState();
-
-        let rootNodeWithChildren = this.findPlan(
+        let rootNodeWithChildren = findPlan(
             bestGoal, 
             actions, 
             lastNode,
@@ -60,240 +49,256 @@ class Planner {
             return;
         }
 
-        return { actions: plannedActions, goal: bestGoal};
-    }
-
-    /**
-     * @param {Goal} bestGoal
-     * @param {Action[]} actions
-     */
-    findLastNode(bestGoal, actions)
-    {
-        let matchList = [];
-
-        actions.forEach(action => {
-            let postConditionMatches = [];
-
-            for(let conditionKey in bestGoal.postConditions)
-            {
-                const condition = bestGoal.postConditions[conditionKey];
-                
-                if(action.postConditions.includes(condition))
-                {
-                    postConditionMatches.push(condition);
-                }
-            }
-
-            matchList.push({
-                action: action,
-                matches: postConditionMatches
-            });
-        })
-
-        matchList = matchList.sort(function(x, y)
-        {
-            return y.matches.length - x.matches.length;
+        return  new Plan({
+            name: bestGoal.name,
+            actions: plannedActions,
+            actionIndex: 0
         });
-
-        return new Node({
-            parent: null,
-            action: matchList[0].action,
-            isMarked: false,
-        })
     }
-    
-    /**
-     * @param {Goal} bestGoal
-     * @param {Action[]} actions
-     * @param {Node} node
-     * @param {int} depth 
-     */
-    findPlan(bestGoal, actions, node, depth)
+}
+
+/**
+ * @param {Goal} bestGoal
+ * @param {Action[]} actions
+ */
+function findLastNode(bestGoal, actions)
+{
+    let matchList = [];
+
+    actions.forEach(action => {
+        let postConditionMatches = [];
+
+        const bestGoalPostConditions = bestGoal.getPostConditions();
+
+        for(let conditionKey in bestGoalPostConditions)
+        {
+            const condition = bestGoalPostConditions[conditionKey];
+
+            const actionPostConditions = action.getPostConditions();
+            
+            if(actionPostConditions.includes(condition))
+            {
+                postConditionMatches.push(condition);
+            }
+        }
+
+        matchList.push({
+            action: action,
+            matches: postConditionMatches
+        });
+    })
+
+    matchList = matchList.sort(function(x, y)
     {
-        if(depth > maxDepth)
-        {
-            return undefined;
-        }
+        return y.matches.length - x.matches.length;
+    });
 
-        if(this.isGoalSatisfied(bestGoal, node))
-        {
-            return node;
-        }
+    return new Node({
+        parent: null,
+        action: matchList[0].action,
+        isMarked: false,
+    })
+}
 
-        for(let i = 0; i < actions.length; i += 1)
-        {
-            if(actions[i] == node.action)
-            {
-                continue;
-            }
-
-            if(!this.isChildNodeable(node, actions[i]))
-            {
-                continue;
-            }
-
-            let childNode = new Node({
-                parent: node,
-                action: actions[i],
-                isMarked: false,
-            })
-
-            node.addChild(childNode);
-
-            let newActions = actions.filter((_, index) => {
-                return index != i;
-            })
-
-            let foundCompletedNode = this.findPlan(bestGoal, newActions, childNode, depth + 1);
-
-            if(foundCompletedNode != undefined)
-            {
-                let rootNode = this.findRootNode(childNode);
-                return rootNode;   
-            }
-        }
-
+/**
+ * @param {Goal} bestGoal
+ * @param {Action[]} actions
+ * @param {Node} node
+ * @param {int} depth 
+ */
+function findPlan(bestGoal, actions, node, depth)
+{
+    if(depth > maxDepth)
+    {
         return undefined;
     }
 
-    /**\
-     * @param {Node} parentNode
-     * @param {Action} action 
-     */
-    isChildNodeable(parentNode, action)
+    if(isGoalSatisfied(bestGoal, node))
     {
-        return parentNode.evaluateNode(this.worldSim, action);
+        return node;
     }
 
-    /**
-     * 
-     * @param {Goal} bestGoal
-     * @param {Node} node 
-     */
-    isGoalSatisfied(bestGoal, node)
+    for(let i = 0; i < actions.length; i += 1)
     {
-        let rootNode = this.findRootNode(node);
-
-        //Check from root down tree if post conditions are met.
-        for(let i = 0; i < bestGoal.postConditions.length; i++)
+        if(actions[i] == node.action)
         {
-            const condition = bestGoal.postConditions[i];
-            if(!this.isPostConditionSatisfied(condition, rootNode))
+            continue;
+        }
+
+        if(!isChildNodeable(node, actions[i]))
+        {
+            continue;
+        }
+
+        let childNode = new Node({
+            parent: node,
+            action: actions[i],
+            isMarked: false,
+        })
+
+        node.addChild(childNode);
+
+        let newActions = actions.filter((_, index) => {
+            return index != i;
+        })
+
+        let foundCompletedNode = findPlan(bestGoal, newActions, childNode, depth + 1);
+
+        if(foundCompletedNode != undefined)
+        {
+            let rootNode = findRootNode(childNode);
+            return rootNode;   
+        }
+    }
+
+    return undefined;
+}
+
+/**\
+ * @param {Node} parentNode
+ * @param {Action} action 
+ */
+function isChildNodeable(parentNode, action)
+{
+    return parentNode.evaluateNode(action);
+}
+
+/**
+ * 
+ * @param {Goal} bestGoal
+ * @param {Node} node 
+ */
+function isGoalSatisfied(bestGoal, node)
+{
+    let rootNode = findRootNode(node);
+
+    const goalPostConditions = bestGoal.getPostConditions();
+
+    //Check from root down tree if post conditions are met.
+    for(let i = 0; i < goalPostConditions.length; i++)
+    {
+        const condition = goalPostConditions[i];
+        if(!isPostConditionSatisfied(condition, rootNode))
+        {
+            return false
+        }
+    }
+
+    //Check if last node conditions satisfied.
+    if(!isPreConditionSatisfied(node))
+    {
+        return false;
+    }
+
+    markUpToParentNode(node);
+
+    return true;
+}
+
+function markUpToParentNode(node)
+{
+    if(node.parent == null)
+    {
+        return;
+    }
+
+    node.isMarked = true;
+    markUpToParentNode(node.parent);
+}
+
+/**
+ * @param {Node} node 
+ */
+function findRootNode(node)
+{
+    if(node.parent == null)
+    {
+        return node;
+    }
+
+    return findRootNode(node.parent);
+}
+
+/**
+ * @param {Condition} condition 
+ * @param {Node} node 
+ */
+function isPreConditionSatisfied(node)
+{
+    const actionPreConditions = node.action.getPreConditions();
+
+    if(actionPreConditions.length == 0)
+    {
+        return true;   
+    }
+
+    let preconditionsToSatisfy = [];
+
+    //Check if precondition is satisfied
+    for(let i = 0; i < actionPreConditions.length; i++) 
+    {
+        if(!actionPreConditions[i].evaluate())
+        {
+            preconditionsToSatisfy.push(actionPreConditions[i]);
+        }
+    }
+
+    if(preconditionsToSatisfy.length == 0)
+    {
+        return true;
+    }
+
+    //Check if children satisfy precondition.
+    for(let i = 0; i < preconditionsToSatisfy.length; i++) {
+        let hasPrecondition = false;
+
+        for(let j = 0; j < node.children.length; j++)
+        {
+            const child = node.children[j];
+
+            const childActionPostConditions = child.action.getPostConditions();
+
+            if(childActionPostConditions.includes(preconditionsToSatisfy[i]))
             {
-                return false
+                hasPrecondition = true;
+                break;
             }
         }
 
-        //Check if last node conditions satisfied.
-        if(!this.isPreConditionSatisfied(node))
+        if(hasPrecondition == false) 
         {
             return false;
         }
-
-        this.markUpToParentNode(node);
-
-        return true;
     }
 
-    markUpToParentNode(node)
-    {
-        if(node.parent == null)
-        {
-            return;
-        }
+    return true;
+}
 
-        node.isMarked = true;
-        this.markUpToParentNode(node.parent);
+/**
+ * 
+ * @param {Condition} condition 
+ * @param {Node} node 
+ */
+function isPostConditionSatisfied(condition, node)
+{
+    const actionPostConditions = node.action.getPostConditions();
+
+    //Check Post-conditions
+    if(actionPostConditions.includes(condition))
+    {
+        return true;   
     }
 
-    /**
-     * @param {Node} node 
-     */
-    findRootNode(node)
+    for(let i = 0; i < node.children.length; i++)
     {
-        if(node.parent == null)
-        {
-            return node;
-        }
-
-        return this.findRootNode(node.parent);
-    }
-
-    /**
-     * @param {Condition} condition 
-     * @param {Node} node 
-     */
-    isPreConditionSatisfied(node)
-    {
-        if(node.action.preConditions.length == 0)
+        const childNode = node.children[i];
+        if(isPostConditionSatisfied(condition, childNode))
         {
             return true;   
         }
-
-        let preconditionsToSatisfy = [];
-
-        //Check if precondition is satisfied
-        for(let i = 0; i < node.action.preConditions.length; i++) 
-        {
-            if(!node.action.preConditions[i].evaluate())
-            {
-                preconditionsToSatisfy.push(node.action.preConditions[i]);
-            }
-        }
-
-        if(preconditionsToSatisfy.length == 0)
-        {
-            return true;
-        }
-
-        //Check if children satisfy precondition.
-        for(let i = 0; i < preconditionsToSatisfy.length; i++) {
-            let hasPrecondition = false;
-
-            for(let j = 0; j < node.children.length; j++)
-            {
-                const child = node.children[j];
-
-                if(child.action.postConditions.includes(preconditionsToSatisfy[i]))
-                {
-                    hasPrecondition = true;
-                    break;
-                }
-            }
-
-            if(hasPrecondition == false) 
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
-    /**
-     * 
-     * @param {Condition} condition 
-     * @param {Node} node 
-     */
-    isPostConditionSatisfied(condition, node)
-    {
-        //Check Post-conditions
-        if(node.action.postConditions.includes(condition))
-        {
-            return true;   
-        }
-
-        for(let i = 0; i < node.children.length; i++)
-        {
-            const childNode = node.children[i];
-            if(this.isPostConditionSatisfied(condition, childNode))
-            {
-                return true;   
-            }
-        }
-
-        return false;
-    }
+    return false;
 }
 
 module.exports = Planner;

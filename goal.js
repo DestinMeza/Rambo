@@ -6,6 +6,8 @@ class Goal {
         this.priority = info.priority;
         this.preConditions = info.preConditions;
         this.postConditions = info.postConditions;
+        this.getPreConditions = info.getPreConditions;
+        this.getPostConditions = info.getPostConditions;
     }
 }
 

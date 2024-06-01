@@ -1,25 +1,22 @@
+const WorldState = require("./worldState");
 const Commander = require("./commander");
 const CreepRunner = require("./creepRunner");
-const WorldState = require("./worldState");
 const BaseManager = require("./baseManager");
 
-let worldState = null;
 let commander = null;
+let worldState = new WorldState();
 
 module.exports.loop = function () {
     setBlueprintToRooms();
     deleteNullCreeps();
 
-    if(commander == null || worldState == null) {
-        worldState = new WorldState();
-
+    if(commander == null) {
         commander = new Commander({
             name: "Test Commander",
-            worldState: worldState
         });
     }
     else {
-        worldState.process();
+        WorldState.process();
         commander.process();
     }
 

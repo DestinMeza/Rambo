@@ -17,15 +17,13 @@ class Node
     }
 
     /**
-     * @param {WorldState} worldSim
      * @param {Action} potentialChildAction
      */
-    evaluateNode(worldSim, potentialChildAction){
-        worldSim.simulateStateChange(this.action.effects);
+    evaluateNode(potentialChildAction){
+        WorldState.simulateStateChange(this.action.effects);
 
-        let simPostConditions = worldSim.actionPostConditionMap[potentialChildAction.name];
-        let simPreConditions = worldSim.actionPreConditionMap[this.action.name];
-
+        let simPostConditions = potentialChildAction.getPostConditions();
+        let simPreConditions = this.action.getPreconditions();
         let notMetConditions = [];
 
         //Find potential all non met conditions in with child.

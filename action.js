@@ -2,11 +2,16 @@ class Action {
     constructor(info)
     {
         this.name = info.name;
+        this.cost = info.cost;
+        this.room = info.room;
         this.hasStarted = false;
         this.preConditions = info.preConditions;
         this.postConditions = info.postConditions;
         this.effects = info.effects;
-        this.cost = info.cost;
+
+        this.getPreConditions = info.getPreConditions;
+        this.getPostConditions = info.getPostConditions;
+
         this.process = (x) => info.process(x);
         this.start = (x) => info.start(x);
 

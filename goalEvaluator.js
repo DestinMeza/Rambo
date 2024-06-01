@@ -3,9 +3,12 @@ class GoalEvaluator
     static evaluate(goals)
     {
         goals = goals.filter(goal => {
-            for(let i = 0; i < goal.preConditions.length; i += 1) {
+
+            const goalPreconditions = goal.getPreConditions();
+
+            for(let i = 0; i < goalPreconditions.length; i += 1) {
                 
-                let condition = goal.preConditions[i];
+                let condition = goalPreconditions[i];
 
                 if(!condition.evaluate())
                 {

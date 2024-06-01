@@ -9,8 +9,6 @@ class Task
         {
             this[key] = info.data[key];
         }
-
-        Game.creeps[this.creep].memory.task = this;
     }
 }
 
