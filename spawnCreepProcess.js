@@ -18,6 +18,13 @@ function process (self) {
     switch(code)
     {
         case OK:
+
+            if(self.nextAction)
+            {
+                self.nextAction.spawnId = self.spawnId;
+                self.nextAction.creepName = self.creepName;
+            }
+
             return PROCESS.SUCCESS;
 
         default:

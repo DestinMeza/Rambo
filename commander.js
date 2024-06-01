@@ -9,68 +9,81 @@ const PROCESS = {
 
 class Commander
 {
-    constructor(info)
+    constructor()
     {
-        this.name = info.name;
         this.roomPlans = [];
         this.isCreatedFrame = true;
     }
 
     loadSavedPlans()
     {
-        const savedCommander = Memory[this.name];
-
-        if (savedCommander == undefined) {
-            return;   
-        }
-        if (Memory[this.name].plans == undefined)
-        {
-            return;   
-        }
-
-        let plans = [];
-
-        return plans;
+        return WorldState.loadSavedPlans();
     }
 
     process()
     {
-        let worldState = WorldState.getInstance();
-
-        const goals = worldState.getGoals();
-        const actions = worldState.getActions();
-
-        let plan = Planner.plan(goals, actions);
-
-        if(plan == undefined)
+        if(this.isCreatedFrame)
         {
-            return;
+            this.roomPlans = this.loadSavedPlans();
+
+            if(this.roomPlans == null)
+            {
+                this.roomPlans = [];   
+            }
+
+            this.isCreatedFrame = false;
         }
 
-        let printedActions = [];
-
-        for(let i = 0; i < plan.actions.length; i++)
+        if(this.roomPlans.length == 0)
         {
-            printedActions.push(plan.actions[i].name);
+            let worldState = WorldState.getInstance();
+
+            const goals = worldState.getGoals();
+            const actions = worldState.getActions();
+    
+            let plan = Planner.plan(goals, actions);
+    
+            if(plan == undefined)
+            {
+                return;
+            }
+    
+            this.roomPlans.push(plan);
+    
+            let printedActions = [];
+    
+            for(let i = 0; i < plan.actions.length; i++)
+            {
+                printedActions.push(plan.actions[i].name);
+            }
+    
+            console.log("Current Plan:", plan.name, JSON.stringify(printedActions));
         }
 
-        console.log("Current Plan:", plan.name, JSON.stringify(printedActions));
+        let queuedRemoval = [];
 
-        let processState = plan.process();
-
-        switch(processState)
+        for(const roomPlanKey in this.roomPlans)
         {
-            case PROCESS.RUNNING:
-                break;
-            case PROCESS.FAILURE:
-                plan = null;
-                break;
-            case PROCESS.SUCCESS:
-                plan = null;
-                break;
+            const plan = this.roomPlans[roomPlanKey];
+
+            let processState = plan.process();
+
+            switch(processState)
+            {
+                case PROCESS.RUNNING:
+                    break;
+                case PROCESS.FAILURE:
+                    queuedRemoval.push(plan);
+                    break;
+                case PROCESS.SUCCESS:
+                    queuedRemoval.push(plan);
+                    break;
+            }
         }
 
-        this.isCreatedFrame = false;
+        this.roomPlans = this.roomPlans.filter(plan => {
+            return queuedRemoval.includes(plan);
+        })
 
         savePlans(this.roomPlans);
     }
@@ -78,15 +91,30 @@ class Commander
 
 function savePlans(plans)
 {
-    if(plans)
+    let serializablePlans = [];
+
+    for(const planKey in plans)
     {
-        return null;
+        const plan = plans[planKey];
+        let serializableActions = [];
+
+        for(const actionKey in plan.actions)
+        {
+            const action = plan.actions[actionKey];
+
+            serializableActions.push(action);
+        }
+        
+        serializablePlans.push({
+            name: plan.name,
+            actions: serializableActions,
+            actionIndex: plan.actionIndex
+        })
     }
-    
-    Memory[this.name] = 
+
+    Memory["Commander"] = 
     {
-        name: this.name,
-        plans: plans
+        plans: serializablePlans
     }
 }
 

@@ -5,16 +5,30 @@ const PROCESS = {
 };
 
 function process (self) {
-    const creep = Game.getObjectById(self.creepID);
+
+    const spawn = Game.getObjectById(self.spawnId);
+
+    if(spawn.spawning != null)
+    {
+        self.creepName = spawn.spawning.name;
+
+        return PROCESS.RUNNING;
+    }
+
+    const creep = Game.creeps[self.creepName];
     
     if(creep == undefined)
     {
-        return PROCESS.FAILURE;   
+        return PROCESS.FAILURE;
     }
 
-    creep.memory.task = self.task;
+    creep.memory.task = {
+        name: self.task,
+        creep: creep.name,
+        state: 0,
+    }
 
-    return SUCCESS;
+    return PROCESS.SUCCESS;
 }
 
 module.exports = process;

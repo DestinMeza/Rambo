@@ -20,10 +20,23 @@ class Node
      * @param {Action} potentialChildAction
      */
     evaluateNode(potentialChildAction){
-        WorldState.simulateStateChange(this.action.effects);
+
+        //This is only for actions that's children dynamically set properties in the next action chain.
+        if(potentialChildAction.possibleActionChildren != undefined && potentialChildAction.possibleActionChildren.length > 0)
+        {
+            if(!potentialChildAction.possibleActionChildren.includes(this.action.name))
+            {
+                return false;
+            }
+        }
+
+        //Check through world state simulation
+
+        //TODO Reimplement.
+        //WorldState.simulateStateChange(this.action.effects);
 
         let simPostConditions = potentialChildAction.getPostConditions();
-        let simPreConditions = this.action.getPreconditions();
+        let simPreConditions = this.action.getPreConditions();
         let notMetConditions = [];
 
         //Find potential all non met conditions in with child.
@@ -53,7 +66,7 @@ class Node
             }
         }
         
-        worldSim.process(); //Reset State
+        //worldSim.process(); //Reset State
         return true;
     }
 

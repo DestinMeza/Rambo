@@ -5,10 +5,10 @@ class Action {
         this.cost = info.cost;
         this.room = info.room;
         this.hasStarted = false;
+        this.possibleActionChildren = info.possibleActionChildren;
         this.preConditions = info.preConditions;
         this.postConditions = info.postConditions;
         this.effects = info.effects;
-
         this.getPreConditions = info.getPreConditions;
         this.getPostConditions = info.getPostConditions;
 

@@ -49,7 +49,7 @@ class Planner
             return;
         }
 
-        return  new Plan({
+        return new Plan({
             name: bestGoal.name,
             actions: plannedActions,
             actionIndex: 0
@@ -65,7 +65,10 @@ function findLastNode(bestGoal, actions)
 {
     let matchList = [];
 
-    actions.forEach(action => {
+    for(let i = 0; i < actions.length; i++)
+    {
+        const action = actions[i];
+
         let postConditionMatches = [];
 
         const bestGoalPostConditions = bestGoal.getPostConditions();
@@ -75,7 +78,7 @@ function findLastNode(bestGoal, actions)
             const condition = bestGoalPostConditions[conditionKey];
 
             const actionPostConditions = action.getPostConditions();
-            
+
             if(actionPostConditions.includes(condition))
             {
                 postConditionMatches.push(condition);
@@ -86,7 +89,7 @@ function findLastNode(bestGoal, actions)
             action: action,
             matches: postConditionMatches
         });
-    })
+    }
 
     matchList = matchList.sort(function(x, y)
     {

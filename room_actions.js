@@ -1,6 +1,8 @@
 const spawnCreepProcess = require("./spawnCreepProcess");
 const assignCreepTaskProcess = require("./assignTaskProcess");
-const Task = require("./task");
+
+const ROOM_CONDITIONS = require("./room_conditions");
+
 const Tasks = require("./tasks");
 
 const ROOM_ACTIONS = {
@@ -10,8 +12,9 @@ const ROOM_ACTIONS = {
         effects: [(worldSim) => {
             worldSim.creepsAlive = worldSim.creepsAlive + 1;
         }],
+        possibleActionChildren: [],
         preConditions: [],
-        postConditions: [],
+        postConditions: [ROOM_CONDITIONS.Spawning_Creep.name],
         getProcess: (self) => spawnCreepProcess(self),
         getStart: (self) => { self.startTime = Game.time; },
         getData: (info) => {
@@ -30,15 +33,16 @@ const ROOM_ACTIONS = {
         effects: [(worldSim) => {
             worldSim.upgraders = worldSim.upgraders + 1;
         }],
+        possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [],
         postConditions: [],
         getProcess: (self) => assignCreepTaskProcess(self),
-        getStart: (self) => { self.task = createTask({
-            name: Tasks.keys.Upgrade_Local,
-            creep: self.creep,
-            data: self.data
-        });},
-        getData: (info) => {}
+        getStart: (self) => {},
+        getData: (info) => {
+            return {
+               task: Tasks.keys.Upgrade_Local
+            } 
+        }
     },
     Assign_Task_Harvest_Return_Local: 
     {
@@ -47,15 +51,19 @@ const ROOM_ACTIONS = {
         effects: [(worldSim) => {
             worldSim.harvesters = worldSim.harvesters + 1;
         }],
-        preConditions: [],
-        postConditions: [],
+        possibleActionChildren: ["Spawn_Worker_Creep"],
+        preConditions: [
+            ROOM_CONDITIONS.Harvester_Count_Threshold_Not_Met.name, 
+            ROOM_CONDITIONS.Spawning_Creep.name
+        ],
+        postConditions: [ROOM_CONDITIONS.Energy_At_MaxCapacity.name],
         getProcess: (self) => assignCreepTaskProcess(self),
-        getStart: (self) => { self.task = createTask({
-            name: Tasks.keys.Harvest_Return_Local,
-            creep: self.creep,
-            data: self.data
-        });},
-        getData: (info) => {}
+        getStart: (self) => {},
+        getData: (info) => {
+            return {
+               task: Tasks.keys.Harvest_Return_Local
+            } 
+        }
     },
     Assign_Task_Build_Local: 
     {
@@ -64,15 +72,16 @@ const ROOM_ACTIONS = {
         effects: [(worldSim) => {
             worldSim.builders = worldSim.builders + 1;
         }],
+        possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [],
         postConditions: [],
         getProcess: (self) => assignCreepTaskProcess(self),
-        getStart: (self) => { self.task = createTask({
-            name: Tasks.keys.Build_Local,
-            creep: self.creep,
-            data: self.data
-        });},
-        getData: (info) => {}
+        getStart: (self) => {},
+        getData: (info) => {
+            return {
+               task: Tasks.keys.Build_Local
+            } 
+        }
     },
     Assign_Task_Transport_Local: 
     {
@@ -81,27 +90,17 @@ const ROOM_ACTIONS = {
         effects: [(worldSim) => {
             worldSim.transports = worldSim.transports + 1;
         }],
+        possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [],
         postConditions: [],
         getProcess: (self) => assignCreepTaskProcess(self),
-        getStart: (self) => { self.task = createTask({
-            name: Tasks.keys.Transport_Local,
-            creep: self.creep,
-            data: self.data
-        });},
-        getData: (info) => {}
+        getStart: (self) => {},
+        getData: (info) => {
+            return {
+               task: Tasks.keys.Transport_Local
+            } 
+        }
     },
-}
-
-function createTask(info)
-{
-    let task = new Task({
-        name: info.task,
-        creep: info.creep,
-        data: info.data
-    });
-
-    return task;
 }
 
 module.exports = ROOM_ACTIONS;

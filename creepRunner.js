@@ -1,3 +1,4 @@
+const Task = require("./task");
 const Tasks = require("./tasks");
 
 class CreepRunner

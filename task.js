@@ -3,7 +3,8 @@ class Task
     constructor(info)
     {
         this.name = info.name;
-        this.creep = info.creep;
+        this.creepName = info.creepName;
+        this.state = 0;
 
         for(let key in info.data)
         {

@@ -11,9 +11,7 @@ module.exports.loop = function () {
     deleteNullCreeps();
 
     if(commander == null) {
-        commander = new Commander({
-            name: "Test Commander",
-        });
+        commander = new Commander();
     }
     else {
         WorldState.process();

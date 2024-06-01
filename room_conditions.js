@@ -17,6 +17,15 @@ const ROOM_CONDITIONS = {
         name: "Base_Level_Greater_Than_1",
         getCondition: (roomInfo) =>  roomInfo.controller.level > 1
     },
+    Spawning_Creep: {
+        name: "Spawning_Creep",
+        getCondition: (roomInfo) =>  roomInfo.room.find(FIND_MY_SPAWNS, {
+            filter: function(spawn)
+            {
+                return spawn.spawning;
+            }
+        }).length > 0
+    },
     Harvester_Count_Threshold_Met: {
         name: "Harvester_Count_Threshold_Met",
         getCondition: (roomInfo) =>  roomInfo.harvesters.length > 5

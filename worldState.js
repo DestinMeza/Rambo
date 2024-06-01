@@ -10,6 +10,7 @@ const placeConstructionProcess = require("./placeConstructionProcess");
 const ROOM_ACTIONS = require("./room_actions");
 const ROOM_GOALS = require("./room_goals");
 const ROOM_CONDITIONS = require("./room_conditions");
+const Plan = require("./plan");
 
 //--------
 
@@ -51,6 +52,47 @@ class WorldState
         //TODO setup global object
         //This is useful for having a place for global states that are helpful for the Bot.
         this.global = {}
+    }
+
+    static loadSavedPlans()
+    {
+        const savedCommander = Memory.Commander;
+
+        if (savedCommander == undefined) {
+            return null;   
+        }
+        if (Memory.Commander.plans == undefined)
+        {
+            return null;   
+        }
+
+        let plans = [];
+
+        for(const planKey in savedCommander.plans)
+        {
+            const plan = savedCommander.plans[planKey];
+
+            let actions = [];
+
+            for(const actionKey in plan.actions)
+            {
+                const actionSaveInfo = plan.actions[actionKey];
+
+                let action = createActionFromSave(actionSaveInfo);
+
+                actions.push(action);
+            }
+
+            let newPlan = new Plan({
+                name: plan.name,
+                actions: actions,
+                actionIndex: plan.actionIndex
+            });
+
+            plans.push(newPlan);
+        }
+
+        return plans;
     }
 
     static getInstance()
@@ -130,12 +172,13 @@ class WorldState
         return conditions;
     }
 
-    simulateStateChange(effects)
-    {
-        effects.forEach(effect => {
-            effect(this);
-        });
-    }
+    //TODO readd this back. to ensure we are evaluating action effects to the world state.
+    // simulateStateChange(effects)
+    // {
+    //     effects.forEach(effect => {
+    //         effect(this);
+    //     });
+    // }
 }
 
 function updateRoom(roomKey)
@@ -219,6 +262,8 @@ function getOwnedRoomActions(roomKey)
         cost: 1.0,
         effects: [(worldSim) => {
         }],
+        preConditions: [],
+        postConditions: [],
         process: (self) => placeConstructionProcess(self),
         start: (self) => { }
     });
@@ -244,8 +289,9 @@ function getRoomGoals(roomKey)
     {
         const goalInfo = ROOM_GOALS[KEY];
 
-        createGoal(roomGoals, {
+        createGoalWithMap(roomGoals, {
             name: goalInfo.name,
+            room: roomKey,
             priority: goalInfo.getPriority(PRIORITES[KEY].value),
             preConditions: goalInfo.preConditions,
             postConditions: goalInfo.postConditions
@@ -282,7 +328,7 @@ function getSpawnActions(roomKey)
     {
         const actionInfo = ROOM_ACTIONS[KEY];
 
-        createAction(spawnActions, {
+        createActionWithMap(spawnActions, {
             name: actionInfo.name,
             room: roomKey,
             cost: actionInfo.cost,
@@ -298,7 +344,12 @@ function getSpawnActions(roomKey)
     return spawnActions;
 }
 
-function createAction(map, info)
+function createActionWithMap(map, info)
+{
+    map[info.name] = createAction(info);
+}
+
+function createAction(info)
 {
     let action = new Action({
         name: info.name,
@@ -312,7 +363,7 @@ function createAction(map, info)
         data: info.data,
         getPreConditions: function()
         {
-            let preconditions = [];
+            let preConditions = [];
     
             const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
     
@@ -320,10 +371,10 @@ function createAction(map, info)
             {
                 const foundCondition = conditions[this.preConditions[i]];
     
-                preconditions.push(foundCondition);
+                preConditions.push(foundCondition);
             }
     
-            return preconditions;
+            return preConditions;
         },
         getPostConditions: function()
         {
@@ -342,19 +393,67 @@ function createAction(map, info)
         }
     })
 
-    map[info.name] = action;
+    return action;
 }
 
-function createGoal(map, info)
+function createActionFromSave(saveInfo)
+{
+    const KEY = saveInfo.name;
+    const actionInfo = ROOM_ACTIONS[KEY];
+
+    const propertyBlacklist = [
+        "getProcess",
+        "getStart",
+        "getData"
+    ];
+
+    let actionData = {}
+
+    // Set dynamic object info.
+    for(const key in saveInfo)
+    {
+        if(propertyBlacklist.includes(key))
+        {
+            continue;   
+        }
+
+        const propertyValue = actionInfo[key];
+
+        if(propertyValue == undefined)
+        {
+            actionData[key] = saveInfo[key];
+        }
+    }
+
+    return createAction({
+        name: KEY,
+        room: saveInfo.room,
+        cost: saveInfo.cost,
+        effects: actionInfo.effects,
+        preConditions: saveInfo.preConditions,
+        postConditions: saveInfo.postConditions,
+        process: (self) => actionInfo.getProcess(self),
+        start: (self) => actionInfo.getStart(self),
+        data: actionData
+    })
+}
+
+function createGoalWithMap(map, info)
+{
+    map[info.name] = createGoal(info);
+}
+
+function createGoal(info)
 {
     let goal = new Goal({
         name: info.name,
+        room: info.room,
         priority: info.priority,
         preConditions: info.preConditions,
         postConditions: info.postConditions,
         getPreConditions: function()
         {
-            let preconditions = [];
+            let preConditions = [];
             
             const conditions = this.room ? instance.rooms[this.room].conditions : instance.global.conditions;
 
@@ -362,10 +461,10 @@ function createGoal(map, info)
             {
                 const foundCondition = conditions[this.preConditions[i]];
     
-                preconditions.push(foundCondition);
+                preConditions.push(foundCondition);
             }
     
-            return preconditions;
+            return preConditions;
         },
         getPostConditions: function()
         {
@@ -384,17 +483,22 @@ function createGoal(map, info)
         }
     })
 
-    map[info.name] = goal;
+    return goal;
 }
 
-function createCondition(map, info)
+function createConditionWithMap(map, info)
+{
+    map[info.name] = createCondition(info);
+}
+
+function createCondition(info)
 {
     let condition = new Condition({
         name: info.name,
         condition: info.condition
     })
 
-    map[info.name] = condition;
+    return condition;
 }
 
 function getRoomStorages(roomKey)
@@ -480,7 +584,7 @@ function getRoomConditions(roomKey)
     {
         const conditionInfo = ROOM_CONDITIONS[KEY];
 
-        createCondition(conditions, {
+        createConditionWithMap(conditions, {
             name: conditionInfo.name,
             condition: conditionInfo.getCondition(roomInfo)
         })

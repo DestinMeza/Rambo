@@ -11,6 +11,11 @@ class Plan
         this.name = info.name;
         this.actions = info.actions;
         this.actionIndex = info.actionIndex;
+
+        for(let i = 0; i < this.actions.length - 1; i++)
+        {
+            this.actions[i].nextAction = this.actions[i + 1];
+        }
     }
 
     process()

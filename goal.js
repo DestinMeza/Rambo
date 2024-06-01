@@ -4,6 +4,7 @@ class Goal {
     {
         this.name = info.name;
         this.priority = info.priority;
+        this.room = info.room;
         this.preConditions = info.preConditions;
         this.postConditions = info.postConditions;
         this.getPreConditions = info.getPreConditions;
