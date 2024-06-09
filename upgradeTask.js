@@ -29,6 +29,14 @@ function process(info) {
 function idle(info) {
 
     const targetStorage = Game.getObjectById(info.targetStorage);
+    const creep = Game.creeps[info.creep];
+
+    if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+        info.state = UPGRADER_STATE.UPGRADING;
+        info.targetSource = null;
+
+        return info;
+    }
 
     if(targetStorage == null)
     {
@@ -125,14 +133,19 @@ function harvest(info) {
 function upgrade(info)
 {
     const creep = Game.creeps[info.creep];
-    const roomController = Game.getObjectById(info.roomController);
+    let roomController = Game.getObjectById(info.roomController);
+
+    if(roomController == undefined)
+    {
+        roomController = creep.room.controller;   
+    }
 
     let result = creep.upgradeController(roomController);
 
     if(result == ERR_NOT_IN_RANGE) {
         creep.moveTo(roomController);
     }
-    else if(creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0)
+    else if(creep.store.getUsedCapacity(RESOURCE_ENERGY) == 0)
     {
         info.state = UPGRADER_STATE.IDLE;
     }

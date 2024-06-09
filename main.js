@@ -1,73 +1,29 @@
 const WorldState = require("./worldState");
 const Commander = require("./commander");
 const CreepRunner = require("./creepRunner");
-const BaseManager = require("./baseManager");
 
 let commander = null;
-let worldState = new WorldState();
+let worldState = null;
 
 module.exports.loop = function () {
-    setBlueprintToRooms();
+
+    //Clears out creep memory when they pass.
     deleteNullCreeps();
 
-    if(commander == null) {
-        commander = new Commander();
-    }
-    else {
-        WorldState.process();
-        commander.process();
+    if(worldState == null || commander == null) {
+        worldState = new WorldState();
+        commander = new Commander(worldState);
+        return;
     }
 
+    //World State updates condition data.
+    worldState.process();
+
+    //Creeps run their tasks.
     CreepRunner.run();
-}
 
-function setBlueprintToRooms()
-{
-    let baseManager = new BaseManager();
-
-    const mainBase = getMainBase();
-
-    for(const roomKey in Game.rooms)
-    {
-        const room = Game.rooms[roomKey];
-
-        //Side rooms
-        if(room.controller == undefined)
-        {
-            continue;
-        }
-
-        //Unowned rooms
-        if(!room.controller.my)
-        {
-            continue;
-        }
-
-        if(room.memory.blueprint == undefined)
-        {
-            baseManager.assignBase(room.name, mainBase == roomKey);
-        }
-    }
-}
-
-function getMainBase()
-{
-    if(Memory.global == undefined)
-    {
-        let firstRoomFound = null;
-
-        for(const roomKey in Game.rooms)
-        {
-            firstRoomFound = Game.rooms[roomKey];
-            break;
-        }
-
-        Memory.global = {
-            mainBase: firstRoomFound.name
-        }
-    }
-    
-    return Memory.global.mainBase;
+    //Commander processes and looks for plans to execute.
+    commander.process();
 }
 
 function deleteNullCreeps()

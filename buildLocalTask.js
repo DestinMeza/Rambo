@@ -6,28 +6,6 @@ const BUILDER_STATE =
     BUILDING: 3
 }
 
-const buildingPriority = {
-    [STRUCTURE_SPAWN]: 0,
-    [STRUCTURE_EXTENSION]: 1,
-    [STRUCTURE_ROAD]: 2,
-    [STRUCTURE_WALL]: 3,
-    [STRUCTURE_RAMPART]: 4,
-    [STRUCTURE_PORTAL]: 5,
-    [STRUCTURE_CONTROLLER]: 6,
-    [STRUCTURE_LINK]: 7,
-    [STRUCTURE_STORAGE]: 8,
-    [STRUCTURE_TOWER]: 9,
-    [STRUCTURE_OBSERVER]: 10,
-    [STRUCTURE_POWER_BANK]: 11,
-    [STRUCTURE_POWER_SPAWN]: 12,
-    [STRUCTURE_EXTRACTOR]: 13,
-    [STRUCTURE_LAB]: 14,
-    [STRUCTURE_TERMINAL]: 15,
-    [STRUCTURE_CONTAINER]: 16,
-    [STRUCTURE_NUKER]: 17,
-    [STRUCTURE_FACTORY]: 18,
-}
-
 function process(info) {
     switch(info.state)
     {
@@ -125,7 +103,7 @@ function harvest(info) {
     if(creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0)
     {
         info.targetStorage = null;
-        info.constructionSite = findConstructionSite(info);
+        info.requestingSite = true;
         info.state = info.constructionSite == null ? BUILDER_STATE.IDLE : BUILDER_STATE.BUILDING;
         return info;
     }
@@ -147,7 +125,7 @@ function harvest(info) {
     }
     else if(creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
         info.state = BUILDER_STATE.BUILDING;
-        info.constructionSite = findConstructionSite(info);
+        info.requestingSite = true;
         info.targetSource = null;
     }
 
@@ -177,26 +155,6 @@ function build(info)
     }
 
     return info;
-}
-
-function findConstructionSite(info) 
-{
-    const creep = Game.creeps[info.creep];
-    const room = creep.room;
-
-    let constructionSites = room.find(FIND_CONSTRUCTION_SITES);
-
-    constructionSites = constructionSites.sort(function(x, y)
-    {
-        return buildingPriority[x.structureType] - buildingPriority[y.structureType];
-    })
-
-    if (constructionSites.length == 0)
-    {
-        return null;   
-    }
-
-    return constructionSites[0].id;
 }
 
 function findSource(info) {

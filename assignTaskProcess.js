@@ -17,14 +17,16 @@ function process (self) {
 
     const creep = Game.creeps[self.creepName];
     
-    if(creep == undefined)
+    if(creep == undefined || creep.spawning)
     {
-        return PROCESS.FAILURE;
+        return PROCESS.RUNNING;
     }
 
     creep.memory.task = {
         name: self.task,
         creep: creep.name,
+        hasStarted: false,
+        roomController: spawn.room.controller.id,
         state: 0,
     }
 

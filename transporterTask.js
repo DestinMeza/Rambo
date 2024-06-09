@@ -82,7 +82,13 @@ function withdraw(info) {
 
     if(targetWithdraw instanceof Creep)
     {
-        result = targetWithdraw.transfer(creep, RESOURCE_ENERGY);
+        const foundEnergy = targetWithdraw.pos.lookFor(LOOK_ENERGY);
+
+        if(foundEnergy != null)
+        {
+            result = creep.pickup(foundEnergy[0]);
+            result = targetWithdraw.transfer(creep, RESOURCE_ENERGY);
+        }
     }
     else
     {
@@ -162,7 +168,13 @@ function findHarvester(info)
     let creeps = room.find(FIND_MY_CREEPS);
 
     let harvesters = creeps.filter(harvester => {
-        return harvester.memory.task.name == "Harvest and Return" && 
+
+        if(harvester.memory.task == null)
+        {
+            return false;    
+        }
+
+        return harvester.memory.task.name == "Harvest_Return_Local" && 
             harvester.store.getUsedCapacity(RESOURCE_ENERGY) / harvester.store.getCapacity(RESOURCE_ENERGY) > 0.7
     })
 
@@ -217,6 +229,12 @@ function findDepositable(info)
     let creeps = room.find(FIND_MY_CREEPS);
 
     let requestingCreeps = creeps.filter(requestee => {
+
+        if(requestee.memory.task == null) 
+        {
+            return false;   
+        }
+
         return requestee.store.getFreeCapacity(RESOURCE_ENERGY) / requestee.store.getCapacity(RESOURCE_ENERGY) > 0.7 && 
             creepsWhoNeedEnergy.includes(requestee.memory.task.name)
     });

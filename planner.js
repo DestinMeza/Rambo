@@ -26,6 +26,11 @@ class Planner
         //Find best last action
         let lastNode = findLastNode(bestGoal, actions);
 
+        if(lastNode == null)
+        {
+            return;
+        }
+
         let rootNodeWithChildren = findPlan(
             bestGoal, 
             actions, 
@@ -49,11 +54,14 @@ class Planner
             return;
         }
 
-        return new Plan({
+        const plan = new Plan({
             name: bestGoal.name,
             actions: plannedActions,
-            actionIndex: 0
-        });
+            actionIndex: 0,
+            initalActionTick: Game.tick
+        }); 
+
+        return plan;
     }
 }
 
@@ -68,15 +76,36 @@ function findLastNode(bestGoal, actions)
     for(let i = 0; i < actions.length; i++)
     {
         const action = actions[i];
+        let cost = action.cost;
 
+        //Evaluate if action satisfies goal beliefs.
+
+        let sharesBeliefs = true;
+        
+        for(const beliefKey in bestGoal.beliefs)
+        {
+            const belief = bestGoal.beliefs[beliefKey];
+
+            if(!action.beliefs.includes(belief))
+            {
+                sharesBeliefs = false;
+                break;
+            }
+        }
+
+        if(sharesBeliefs == false)
+        {
+            continue;   
+        }
+
+        //Get matching post conditions count.
         let postConditionMatches = [];
 
         const bestGoalPostConditions = bestGoal.getPostConditions();
 
-        for(let conditionKey in bestGoalPostConditions)
+        for(const conditionKey in bestGoalPostConditions)
         {
             const condition = bestGoalPostConditions[conditionKey];
-
             const actionPostConditions = action.getPostConditions();
 
             if(actionPostConditions.includes(condition))
@@ -85,15 +114,22 @@ function findLastNode(bestGoal, actions)
             }
         }
 
+        cost += postConditionMatches.length;
+
         matchList.push({
             action: action,
-            matches: postConditionMatches
+            cost: cost,
         });
+    }
+
+    if(matchList.length == 0)
+    {
+        return null;
     }
 
     matchList = matchList.sort(function(x, y)
     {
-        return y.matches.length - x.matches.length;
+        return y.cost - x.cost;
     });
 
     return new Node({
@@ -126,6 +162,26 @@ function findPlan(bestGoal, actions, node, depth)
         if(actions[i] == node.action)
         {
             continue;
+        }
+
+        //Evaluate the beleifs if action has belief and see if they match for children actions.
+        if(actions[i].beliefs != undefined)
+        {
+            let sharesBeliefs = true;
+
+            for(let j = 0; j < actions[i].beliefs.length; j++)
+            {
+                if(!bestGoal.beliefs.includes(actions[i].beliefs[j]))
+                {
+                    sharesBeliefs = false;
+                    break;
+                }
+            }
+
+            if(sharesBeliefs == false)
+            {
+                continue;
+            }
         }
 
         if(!isChildNodeable(node, actions[i]))
@@ -167,7 +223,6 @@ function isChildNodeable(parentNode, action)
 }
 
 /**
- * 
  * @param {Goal} bestGoal
  * @param {Node} node 
  */
@@ -177,7 +232,7 @@ function isGoalSatisfied(bestGoal, node)
 
     const goalPostConditions = bestGoal.getPostConditions();
 
-    //Check from root down tree if post conditions are met.
+    //Check from root of tree if post conditions are met for goal.
     for(let i = 0; i < goalPostConditions.length; i++)
     {
         const condition = goalPostConditions[i];
@@ -187,7 +242,7 @@ function isGoalSatisfied(bestGoal, node)
         }
     }
 
-    //Check if last node conditions satisfied.
+    //Check from root of tree to see if root tree nodes are satisfied.
     if(!isPreConditionSatisfied(node))
     {
         return false;
@@ -278,7 +333,6 @@ function isPreConditionSatisfied(node)
 }
 
 /**
- * 
  * @param {Condition} condition 
  * @param {Node} node 
  */

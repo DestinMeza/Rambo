@@ -24,6 +24,7 @@ class Node
         //This is only for actions that's children dynamically set properties in the next action chain.
         if(potentialChildAction.possibleActionChildren != undefined && potentialChildAction.possibleActionChildren.length > 0)
         {
+
             if(!potentialChildAction.possibleActionChildren.includes(this.action.name))
             {
                 return false;

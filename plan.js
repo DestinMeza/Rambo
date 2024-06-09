@@ -11,6 +11,7 @@ class Plan
         this.name = info.name;
         this.actions = info.actions;
         this.actionIndex = info.actionIndex;
+        this.initalActionTick = info.initalActionTick;
 
         for(let i = 0; i < this.actions.length - 1; i++)
         {
@@ -30,20 +31,17 @@ class Plan
 
         let processState = currentAction.process(currentAction);
 
-        switch(processState) {
-            case PROCESS.SUCCESS:
-                let newActionIndex = this.actionIndex + 1;
+        if(processState == PROCESS.SUCCESS)
+        {
+            let newActionIndex = this.actionIndex + 1;
 
-                if(newActionIndex < this.actions.length)
-                {
-                    this.actionIndex = newActionIndex;
-                    processState = PROCESS.RUNNING;
-                    break;
-                }
-                
-                processState = PROCESS.SUCCESS;
-            default:
-                break;
+            if(this.actions.length > newActionIndex)
+            {
+                this.actionIndex = newActionIndex;
+                processState = PROCESS.RUNNING;
+
+                return processState;
+            }
         }
 
         return processState;

@@ -9,22 +9,18 @@ const PROCESS = {
 
 class Commander
 {
-    constructor()
+    constructor(worldState)
     {
         this.roomPlans = [];
         this.isCreatedFrame = true;
-    }
-
-    loadSavedPlans()
-    {
-        return WorldState.loadSavedPlans();
+        this.worldState = worldState;
     }
 
     process()
     {
-        if(this.isCreatedFrame)
+        if(this.isCreatedFrame == true)
         {
-            this.roomPlans = this.loadSavedPlans();
+            this.roomPlans = this.worldState.loadSavedPlans();
 
             if(this.roomPlans == null)
             {
@@ -36,10 +32,8 @@ class Commander
 
         if(this.roomPlans.length == 0)
         {
-            let worldState = WorldState.getInstance();
-
-            const goals = worldState.getGoals();
-            const actions = worldState.getActions();
+            const goals = this.worldState.getGoals();
+            const actions = this.worldState.getActions();
     
             let plan = Planner.plan(goals, actions);
     
@@ -64,7 +58,7 @@ class Commander
 
         for(const roomPlanKey in this.roomPlans)
         {
-            const plan = this.roomPlans[roomPlanKey];
+            let plan = this.roomPlans[roomPlanKey];
 
             let processState = plan.process();
 
@@ -82,7 +76,7 @@ class Commander
         }
 
         this.roomPlans = this.roomPlans.filter(plan => {
-            return queuedRemoval.includes(plan);
+            return !queuedRemoval.includes(plan);
         })
 
         savePlans(this.roomPlans);
@@ -108,7 +102,8 @@ function savePlans(plans)
         serializablePlans.push({
             name: plan.name,
             actions: serializableActions,
-            actionIndex: plan.actionIndex
+            actionIndex: plan.actionIndex,
+            initalActionTick: plan.initalActionTick
         })
     }
 

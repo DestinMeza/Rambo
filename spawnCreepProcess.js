@@ -13,7 +13,11 @@ function process (self) {
     const possibleBodyParts = self.possibleBodyParts;
     const body = CreepBuilder.getCreepBody(requiredBodyParts, possibleBodyParts, spawn.room.name);
 
-    let code = spawn.spawnCreep(body, creepName);
+    let code = spawn.spawnCreep(body, creepName, {
+        memory: {
+            originRoom: spawn.room.name
+        }
+    });
     
     switch(code)
     {

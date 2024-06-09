@@ -75,7 +75,7 @@ class BaseManager {
     //TODO have some sort of system for different blueprints.
     getBlueprint(roomName, originPosition, isMain)
     {
-        let buildings = [];
+        let buildings = {};
 
         let bluePrintOrigin = isMain ? FortressBlueprint.mainOrigin : FortressBlueprint.remoteOrigin;
 
@@ -95,10 +95,9 @@ class BaseManager {
                 positions[i] = new RoomPosition(relativeX, relativeY, roomName);
             }
 
-            buildings.push({
-                type: building.type,
+            buildings[buildingKey] = {
                 positions: positions
-            });
+            };
         }
 
         return {

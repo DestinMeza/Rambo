@@ -7,6 +7,7 @@ class Goal {
         this.room = info.room;
         this.preConditions = info.preConditions;
         this.postConditions = info.postConditions;
+        this.beliefs = info.beliefs;
         this.getPreConditions = info.getPreConditions;
         this.getPostConditions = info.getPostConditions;
     }
