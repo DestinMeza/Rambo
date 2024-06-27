@@ -47,14 +47,14 @@ class BaseManager {
 
         if(roomInfo != undefined && roomInfo.blueprint != undefined)
         {
-            return;
+            return false;
         }
 
         let originPosition = isMain ? this.getMainOrigin(roomName) : this.getBestOrigin(roomName);
 
         if(originPosition == undefined)
         {
-            return;
+            return false;
         }
 
         let blueprint = this.getBlueprint(roomName, originPosition, isMain);
@@ -70,6 +70,8 @@ class BaseManager {
             roomInfo.blueprint = blueprint;
             Memory.rooms[roomName] = roomInfo;
         }
+
+        return true;
     }
     
     //TODO have some sort of system for different blueprints.

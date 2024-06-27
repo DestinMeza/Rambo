@@ -6,7 +6,6 @@ let commander = null;
 let worldState = null;
 
 module.exports.loop = function () {
-
     //Clears out creep memory when they pass.
     deleteNullCreeps();
 

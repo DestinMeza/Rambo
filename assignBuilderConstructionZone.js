@@ -27,21 +27,47 @@ const BUILDING_PRIORITY = {
 }
 
 function process (self) {
-    const creep = Game.getObjectById(self.creepName);
+    const room = Game.rooms[self.room];
+
+    if(room == undefined)
+    {
+        return PROCESS.FAILURE;
+    }
+
+    const foundCreeps = room.find(FIND_MY_CREEPS, {
+        filter: (creep) => {
+            if(creep.memory == undefined)
+            {
+                return false;
+            }
+
+            if(creep.memory.task == undefined)
+            {
+                return false;
+            }
+
+            return creep.memory.task.requestingSite;
+        }}
+    );
+
+    if(foundCreeps.length <= 0)
+    {
+        return PROCESS.FAILURE;   
+    }
+    
+    const creep = foundCreeps[0];
 
     if(creep == undefined || creep.spawning)
     {
         return PROCESS.RUNNING;
     }
 
-    const room = Game.rooms[self.roomName];
-    
-    if(room == undefined)
+    const blueprint = room.memory.blueprint;
+
+    if(blueprint == null)
     {
         return PROCESS.FAILURE;
     }
-
-    const blueprint = Memory.rooms[self.roomName].blueprint;
 
     for(const buildingKey in BUILDING_PRIORITY)
     {
@@ -64,13 +90,13 @@ function process (self) {
 
         let buildingIndex = buildingsBuilt.length;
 
-        let positionInfo = buildingInfo[buildingIndex];
+        let positionInfo = buildingInfo.positions[buildingIndex];
 
-        const foundObjects = room.look(positionInfo.x, positionInfo.y);
-        
+        const foundObjects = room.lookAt(positionInfo.x, positionInfo.y);
+
         const constructionSites = foundObjects.filter((foundObject) => {
             return foundObject.type == LOOK_CONSTRUCTION_SITES 
-                && foundObject.structureType == buildingKey
+                && foundObject.constructionSite.structureType == buildingKey
         })
 
         let targetSite = null;
@@ -85,19 +111,27 @@ function process (self) {
                 return PROCESS.FAILURE;
             }
             
-            targetSite = room.find(FIND_MY_CONSTRUCTION_SITES, {
+            const sitesFound = room.find(FIND_MY_CONSTRUCTION_SITES, {
                 filter: (structure) => {
                     return structure.pos.x == positionInfo.x && 
                     structure.pos.y == positionInfo.y;
                 }
             });
+
+            targetSite = sitesFound[0];
         }
         else
         {
-            targetSite = constructionSites[0];
+            targetSite = constructionSites[0].constructionSite;
+        }
+
+        if(targetSite == null)
+        {
+            return PROCESS.FAILURE;
         }
 
         creep.memory.task.constructionSite = targetSite.id;
+        creep.memory.task.requestingSite = false;
         return PROCESS.SUCCESS;
     }
 

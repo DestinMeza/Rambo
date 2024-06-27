@@ -8,7 +8,7 @@ const PROCESS = {
 
 function process (self) {
 
-    const room = Game.rooms[self.roomName];
+    const room = Game.rooms[self.room];
 
     if(room == undefined)
     {
@@ -20,42 +20,31 @@ function process (self) {
         //Side rooms
         return PROCESS.FAILURE;
     }
+
     if(!room.controller.my)
     {
         //Unowned rooms
         return PROCESS.FAILURE;
     }
 
-    if(room.memory.blueprint != undefined)
-    {
-        console.log("Room ", room, "has a blueprint assigned.");
-        return PROCESS.FAILURE;
-    }
-
     const baseManager = new BaseManager();
 
-    if(baseManager.evaluateRoom(room.name) == undefined)
-    {
-        console.log("Room ", room, "is not a valid room to build a base in.");
-        return PROCESS.FAILURE;
-    }
+    const mainBaseName = getMainBaseName();
+    const isMainBase = mainBaseName == room.name;
 
-    if(room.memory.grid)
-    {
-        const mainBaseName = getMainBaseName();
-        baseManager.assignBase(room.name, mainBaseName == room.name);
-    }
-    else
-    {
-        console.log("Room ", room, "is to be ignored.");
-        return PROCESS.FAILURE;
-    }
+    const result = baseManager.assignBase(room.name, isMainBase);
 
-    return PROCESS.SUCCESS;
+
+    return result ? PROCESS.SUCCESS : PROCESS.FAILURE;
 }
 
 function getMainBaseName()
 {
+    if(Memory.global == undefined)
+    {
+        Memory.global = {};   
+    }
+
     if(Memory.global.mainBase == undefined)
     {
         let firstRoomFound = null;

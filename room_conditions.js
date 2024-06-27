@@ -37,11 +37,22 @@ const ROOM_CONDITIONS = {
     Room_Builders_Need_Assignment: {
         name: "Room_Builders_Need_Assignment",
         getCondition: (roomInfo) => {
-            for(const builder in roomInfo.builders)
+            for(const builderIndex in roomInfo.builders)
             {
-                const builderInfo = Game.creeps[builder];
+                const builderInfo = Game.creeps[roomInfo.builders[builderIndex]];
+
+
+                if(builderInfo == undefined)
+                {
+                    continue;   
+                }
+
+                if(builderInfo.memory == undefined)
+                {
+                    continue;    
+                }
                 
-                if(builderInfo.memory.task != undefined)
+                if(builderInfo.memory.task == undefined)
                 {
                     continue;
                 }

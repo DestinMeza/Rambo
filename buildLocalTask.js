@@ -140,6 +140,7 @@ function build(info)
     if(constructionSite == undefined)
     {
         info.constructionSite = null;
+        info.requestingSite = true;
         info.state = BUILDER_STATE.IDLE;
         return info;
     }

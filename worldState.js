@@ -174,6 +174,7 @@ class WorldState
         roomInfo.my = roomInfo.room.controller.my;
         if(roomInfo.my == true)
         {
+            roomInfo.randomNumber = this.randomNumber;
             roomInfo.stores = this.getRoomStorages(roomKey);
             roomInfo.constructionSites = this.getConstructionSites(roomKey);
             roomInfo.sourceSaturation = this.getRoomSourceSaturation(roomKey);
@@ -186,6 +187,10 @@ class WorldState
             roomInfo.transports = this.getCreepsWithTaskFilter(roomKey, Tasks.keys.Transport_Local);
             roomInfo.upgraders = this.getCreepsWithTaskFilter(roomKey, Tasks.keys.Upgrade_Local);
             roomInfo.conditions = this.getRoomConditions(roomKey);
+            roomInfo.actions = this.getOwnedRoomActions(roomKey);
+            roomInfo.goals = this.getRoomGoals(roomKey);
+            roomInfo.blueprint = roomInfo.room.memory.blueprint;
+
         }
     }
 
@@ -224,6 +229,7 @@ class WorldState
     {
         let roomInfo = this.rooms[roomKey];
 
+        roomInfo.randomNumber = this.randomNumber;
         roomInfo.controller = roomInfo.room.controller;
         roomInfo.stores = this.getRoomStorages(roomKey);
         roomInfo.constructionSites = this.getConstructionSites(roomKey);

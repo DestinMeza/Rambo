@@ -5,7 +5,16 @@ const ROOM_GOALS = {
     Collect_Energy:
     {
         name: "Collect_Energy",
-        getPriority: (roomInfo) => roomInfo.capacityRatio * 2,
+        getPriority: (roomInfo) => {
+            let harvesterPriority = 2.0;
+
+            if(roomInfo.sourceSaturation > 0 && roomInfo.harvesters.length > 0)
+            {
+                harvesterPriority = roomInfo.sourceSaturation / roomInfo.harvesters.length;
+            }
+
+            return harvesterPriority;
+        },
         preConditions: [],
         postConditions: [],
         beliefs: [BELIEFS.Increases_Energy_Collection]
@@ -24,7 +33,9 @@ const ROOM_GOALS = {
         getPriority: (roomInfo) => {
             let upgraderPriority = 0.0;
 
-            if(roomInfo.sourceSaturation > 0)
+            let condition = ROOM_CONDITIONS.Upgrader_Count_Threshold_Met.getCondition(roomInfo);
+
+            if(!condition && roomInfo.sourceSaturation > 0)
             {
                 upgraderPriority = roomInfo.harvesters.length / roomInfo.sourceSaturation;
             }
@@ -40,8 +51,10 @@ const ROOM_GOALS = {
         name: "Improve_Build_Speed",
         getPriority: (roomInfo) => {
             let builderPriority = 0.0;
+            
+            let condition = ROOM_CONDITIONS.Builder_Count_Threshold_Met.getCondition(roomInfo);
 
-            if(roomInfo.sourceSaturation > 0)
+            if(!condition && roomInfo.sourceSaturation > 0)
             {
                 builderPriority = roomInfo.harvesters.length / roomInfo.sourceSaturation;
             }
@@ -55,7 +68,7 @@ const ROOM_GOALS = {
     Create_Base:
     {
         name: "Create_Base",
-        getPriority: (roomInfo) => 1.0,
+        getPriority: (roomInfo) => 5.0,
         preConditions: [
             ROOM_CONDITIONS.Room_Has_No_Blueprint.name, 
             ROOM_CONDITIONS.Room_Is_Not_Ignore.name],
@@ -65,7 +78,7 @@ const ROOM_GOALS = {
     Resolve_Idle_Builder_Creeps:
     {
         name: "Resolve_Idle_Builder_Creeps",
-        getPriority: (roomInfo) => 1.0,
+        getPriority: (roomInfo) => 2.0,
         preConditions: [ROOM_CONDITIONS.Room_Builders_Need_Assignment.name],
         postConditions: [],
         beliefs: [BELIEFS.Resolve_Builder_Task]

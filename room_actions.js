@@ -69,8 +69,8 @@ const ROOM_ACTIONS = {
             return {
                 creepName: "Transporter " + roomInfo.randomNumber,
                 spawnId: roomInfo.spawnId,
-                requiredBodyParts: [CARRY, MOVE],
-                possibleBodyParts: [CARRY, MOVE]
+                requiredBodyParts: [CARRY, MOVE, MOVE],
+                possibleBodyParts: [CARRY, MOVE, MOVE]
             }
         }
     },
@@ -79,7 +79,6 @@ const ROOM_ACTIONS = {
         name: "Assign_Task_Upgrade",
         cost: 1.0,
         effects: [(worldSim) => {
-            worldSim.upgraders = worldSim.upgraders + 1;
         }],
         possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [
@@ -101,7 +100,6 @@ const ROOM_ACTIONS = {
         name: "Assign_Task_Harvest_Return_Local",
         cost: 1.0,
         effects: [(worldSim) => {
-            worldSim.harvesters = worldSim.harvesters + 1;
         }],
         possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [
@@ -124,7 +122,6 @@ const ROOM_ACTIONS = {
         name: "Assign_Task_Build_Local",
         cost: 1.0,
         effects: [(worldSim) => {
-            worldSim.builders = worldSim.builders + 1;
         }],
         possibleActionChildren: ["Spawn_Worker_Creep"],
         preConditions: [            
@@ -132,8 +129,8 @@ const ROOM_ACTIONS = {
             ROOM_CONDITIONS.Spawning_Creep.name,
             ROOM_CONDITIONS.Room_Has_Blueprint.name
         ],
-        postConditions: [BELIEFS.Increase_Build_Speed],
-        beliefs: [],
+        postConditions: [],
+        beliefs: [BELIEFS.Increase_Build_Speed],
         getProcess: (self) => assignCreepTaskProcess(self),
         getStart: (self) => {},
         getData: (roomInfo) => {
@@ -198,9 +195,6 @@ const ROOM_ACTIONS = {
         getProcess: (self) => generateBlueprintProcess(self),
         getStart: (self) => { },
         getData: (roomInfo) => {
-            return { 
-                roomName: roomInfo.name
-            }
         }
     }
 }
